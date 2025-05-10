@@ -1,0 +1,121 @@
+#! /bin/bash
+
+snow_depth=1
+trunk_height=2
+trunk_width=3
+min_snow_width=7
+
+top_leaf_symbol="*"
+bot_leaf_symbol="#"
+trunk_symbol="#"
+snow_symbol="*"
+
+function print_repeat() {
+  local symbol="$1"
+  local count="$2"
+  local i
+  while ((count > 0)); do
+    printf "%s" "$symbol"
+    ((count--))
+  done
+  # for ((i = 0; i < count; i++)); do
+  #   printf "%s" "$symbol"
+  # done
+}
+
+function print_row() {
+  local symbol="$1"
+  local count="$2"
+  local pad="$3"
+  print_repeat " " "$pad"
+  print_repeat "$symbol" "$count"
+  printf "\n"
+}
+
+function print_segment() {
+  local segment_height="$1"
+  local snow_width="$2"
+  local offset="$3"
+  local h
+  for ((h = segment_height; h > 0; h--)); do
+    if (((h + offset) % 2 == 0)); then
+      print_row "$bot_leaf_symbol" $((snow_width - 2 * h)) "$h"
+    else
+      print_row "$top_leaf_symbol" $((snow_width - 2 * h)) "$h"
+    fi
+  done
+}
+
+function print_trunk() {
+  local snow_width="$1"
+  local pad=$((snow_width / 2 - 1))
+  local i
+  for i in {1..2}; do
+    print_row "$trunk_symbol" "$trunk_width" "$pad"
+  done
+  # for ((i = 0; i < trunk_height; i++)); do
+  #   print_row "$trunk_symbol" "$trunk_width" "$pad"
+  # done
+}
+
+function print_snow() {
+  local snow_width="$1"
+  print_repeat "$snow_symbol" "$snow_width"
+  printf "\n"
+}
+
+function print_tree() {
+  local total_height="$1"
+  local snow_width="$2"
+  local segments_total_height=$((total_height - snow_depth - trunk_height))
+  local segment_max_height=$(((snow_width - 1) / 2))
+  local full_segments_count=$((segments_total_height / segment_max_height))
+  local trailing_segment_height=$((segments_total_height % segment_max_height))
+  
+  local i
+  until ((full_segments_count == 0)); do
+    if ((snow_width / 2 % 2 == 0)); then
+      print_segment "$segment_max_height" "$snow_width" 1
+    else
+      print_segment "$segment_max_height" "$snow_width" 0
+    fi
+    ((full_segments_count--))
+  done
+  # for ((i = 0; i < full_segments_count; i++)); do
+  #   print_segment "$segment_max_height" "$snow_width"
+  # done
+  print_segment "$trailing_segment_height" "$snow_width" 0
+  print_trunk "$snow_width"
+}
+
+total_height=$1
+snow_width=$2
+if [[ $# -ne 2 ]]; then
+  echo "Error: expected 2 arguments. Actual was $#" >&2
+  exit 1
+fi
+if [[ "$total_height" -lt 0 || "$snow_width" -lt 0 ]]; then
+  echo "Error: arguments must be positive integer values" >&2
+  exit 1
+fi
+if (( $total_height % 2 != 0 )); then
+  total_height=$(( $total_height - 1 ))
+fi
+if (( $snow_width % 2 == 0 )); then
+  snow_width=$(( $snow_width - 1 ))
+fi
+arguments_valid=true
+if (( $snow_width < min_snow_width )); then
+  echo "Error: the width of the snow must be greater than or equal to $min_snow_width" >&2
+  arguments_valid=false
+fi
+if (( $total_height - $snow_width != 1 )); then
+  echo "Error: cannot build a tree with the given arguments" >&2
+  arguments_valid=false
+fi
+if ! $arguments_valid; then
+  exit 1
+fi
+
+print_tree $total_height $snow_width
+print_snow $snow_width

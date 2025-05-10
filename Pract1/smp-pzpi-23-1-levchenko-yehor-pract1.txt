@@ -1,0 +1,165 @@
+﻿Міністерство освіти та науки України
+Харківський національний університет радіоелектроніки
+
+
+Кафедра програмної інженерії
+
+
+
+
+
+
+ЗВІТ
+ПРО ПРАКТИНЕ ЗАВДАННЯ №1
+з дисципліни «Скриптові мови програмування»
+
+
+
+
+
+
+Виконав:
+ст. гр. ПЗПІ-23-1
+Левченко Є.Д.
+
+Перевірив:
+Ст. викл. кафедри ПІ
+Сокорчук І.П.
+
+
+
+Харків, 2025 р. 
+
+Практичне завдання №1
+     1 Умови задачі
+     Написати Bash скрипт, який друкуватиме на екрані ялинку із двох ярусів гілок, стовбура та шару снігу.
+     Ялинка повинна бути симетричною.
+     Яруси гілок повинні утворювати правильні рівнобедрені трикутники у яких
+     сусідні рядки відрізняються на два символи та складаються почергово
+     або з символів «*» або з символів «#»
+     Ширина усіх ярусів гілок повинна бути на 2 символи вужча ніж ширина снігу.
+     Висота стовбура та товщина снігу мають бути завжди такі, як у прикладі.
+     Висота ялинки у рядках разом з шаром снігу та ширина шару снігу в символах
+     вказується скрипту в його параметрах при запуску.
+     Параметри скрипта повинні мати додатнє значення.
+     Вказані значення повинні округлятися до потрібних у меншу сторону.
+     Якщо за вказаними при запуску скрипта значеннями зобразити ялинку на екрані неможливо, скрипт повинен вивести у потік помилок сповіщення про неправильне значення аргумента і повернути відповідний результат у батьківський процес.
+     У скрипті потрібно обовʼязково використати конструкції, наведені нижче.
+if ... then ... fi
+while ... do ... done
+until ... do ... done
+for ... in .. do ... done
+for ((...)); do ... done
+     У скрипті також потрібно використати функцію.  
+     2 Хід роботи
+     Відкривши термінал у робочій директорії, створимо скрипт, скориставшись командою touch, найменувавши файл pzpi-23-1-levchenko-yehor-task1. Після створення, перевіримо його наявність та встановлені прапори за допомогою команди ls з прапором -l. Скористаємося командою chmod з прапором +x для визначення файла як виконуваного. Знову перевіримо наявність відповідних прапорів та перейдемо до написання скрипту у текстовому редакторі Vim.
+     На початку скрипту, після зазначення шебанга, будуть оголошені змінні, які будуть визначати параметри дерева: глибина снігу, висоту та ширину стовбура, мінімально допустиму ширина дерева, а також символи, що будуть використовуватись для різних частин конструкції.
+     Далі створюються допоміжні функції. print_repeat виводить задану кількість повторень символу, а print_row додає відступи та друкує рядок певної довжини. print_segment відповідає за друк окремих сегментів ялинки, де кожен рівень гілок чергується між символами * і #. print_trunk центрує та малює стовбур, а print_snow створює основу з снігу.
+     Функція print_tree визначає, як будуть виглядати сегменти дерева, розраховує їх висоту та кількість, і відповідно викликає print_segment. Вона також враховує, чи потрібно зміщувати розташування символів для візуальної рівномірності, а після друку гілок додає стовбур.
+     Перед побудовою дерева перевіряється коректність вхідних параметрів. Якщо аргументи не дозволені, виводиться помилка, і виконання завершується. Інакше, викликається print_tree, яка друкує ялинку, та print_snow, що додає снігову основу.
+     Висновок: в ході виконання практичного завдання, мною було створено скрипт на скриптовій мові програмування Bash, який виводить символьне зображення ялинки. Написання такого скрипта надало мені практичний досвід для ознайомлення з базовими конструкціями Bash та особливостями роботи зі скриптовими мовами програмування та програмами консольних інтерфейсів. 
+
+ДОДАТОК А
+Вихідний код
+  1 #! /bin/bash
+  2 snow_depth=1
+  3 trunk_height=2
+  4 trunk_width=3
+  5 min_snow_width=7
+  6 top_leaf_symbol="*"
+  7 bot_leaf_symbol="#"
+  8 trunk_symbol="#"
+  9 snow_symbol="*"
+ 10 function print_repeat() {
+ 11   local symbol="$1"
+ 12   local count="$2"
+ 13   local i
+ 14   while ((count > 0)); do
+ 15     printf "%s" "$symbol"
+ 16     ((count--))
+ 17   done
+ 18 }
+ 19 function print_row() {
+ 20   local symbol="$1"
+ 21   local count="$2"
+ 22   local pad="$3"
+ 23   print_repeat " " "$pad"
+ 24   print_repeat "$symbol" "$count"
+ 25   printf "\n"
+ 26 }
+ 27 function print_segment() {
+ 28   local segment_height="$1"
+ 29   local snow_width="$2"
+ 30   local offset="$3"
+ 31   local h
+ 32   for ((h = segment_height; h > 0; h--)); do
+ 33     if (((h + offset) % 2 == 0)); then
+ 34       print_row "$bot_leaf_symbol" $((snow_width - 2 * h)) "$h"
+ 35     else
+ 36       print_row "$top_leaf_symbol" $((snow_width - 2 * h)) "$h"
+ 37     fi
+ 38   done
+ 39 }
+ 40 function print_trunk() {
+ 41   local snow_width="$1"
+ 42   local pad=$((snow_width / 2 - 1))
+ 43   local i
+ 44   for i in {1..2}; do
+ 45     print_row "$trunk_symbol" "$trunk_width" "$pad"
+ 46   done
+ 47 }
+ 48 function print_snow() {
+ 49   local snow_width="$1"
+ 50   print_repeat "$snow_symbol" "$snow_width"
+ 51   printf "\n"
+ 52 }
+ 53 function print_tree() {
+ 54   local total_height="$1"
+ 55   local snow_width="$2"
+ 56   local segments_total_height=$((total_height - snow_depth - trunk_height))
+ 57   local segment_max_height=$(((snow_width - 1) / 2))
+ 58   local full_segments_count=$((segments_total_height / segment_max_height))
+ 59   local trailing_segment_height=$((segments_total_height % segment_max_height))
+ 60   
+ 61   local i
+ 62   until ((full_segments_count == 0)); do
+ 63     if ((snow_width / 2 % 2 == 0)); then
+ 64       print_segment "$segment_max_height" "$snow_width" 1
+ 65     else
+ 66       print_segment "$segment_max_height" "$snow_width" 0
+ 67     fi
+ 68     ((full_segments_count--))
+ 69   done
+ 70   print_segment "$trailing_segment_height" "$snow_width" 0
+ 71   print_trunk "$snow_width"
+ 72 }
+ 73 
+ 74 total_height=$1
+ 75 snow_width=$2
+ 76 if [[ $# -ne 2 ]]; then
+ 77   echo "Error: expected 2 arguments. Actual was $#" >&2
+ 78   exit 1
+ 79 fi
+ 80 if [[ "$total_height" -lt 0 || "$snow_width" -lt 0 ]]; then
+ 81   echo "Error: arguments must be positive integer values" >&2
+ 82   exit 1
+ 83 fi
+ 84 if (( $total_height % 2 != 0 )); then
+ 85   total_height=$(( $total_height - 1 ))
+ 86 fi
+ 87 if (( $snow_width % 2 == 0 )); then
+ 88   snow_width=$(( $snow_width - 1 ))
+ 89 fi
+ 90 arguments_valid=true
+ 91 if (( $snow_width < min_snow_width )); then
+ 92   echo "Error: the width of the snow must be greater than or equal to $min_snow_width" >&2
+ 93   arguments_valid=false
+ 94 fi
+ 95 if (( $total_height - $snow_width != 1 )); then
+ 96   echo "Error: cannot build a tree with the given arguments" >&2
+ 97   arguments_valid=false
+ 98 fi
+ 99 if ! $arguments_valid; then
+100   exit 1
+101 fi
+102 print_tree $total_height $snow_width; print_snow $snow_width
