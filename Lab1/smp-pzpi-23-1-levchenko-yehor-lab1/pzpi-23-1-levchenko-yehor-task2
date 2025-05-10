@@ -1,0 +1,236 @@
+#! /bin/bash
+
+# Helper Functions =========================================
+function err() {
+  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+}
+
+function out() {
+  if $quiet; then return; fi
+  echo $*
+}
+
+function showHelp() {
+cat << EOF
+Використання: 
+ $0 [[-h|--help] | [-v|--version]] | [[-q|--quiet] [академ_група] файл_із_cist.csv]
+
+Параметри:
+ академ_група          Назва академічної групи (шаблон)
+ файл_із_cist.csv      Експортований CSV-файл розкладу занять
+
+Опис:
+ Перетворити CSV-файл розкладу занять у придатний для імпорту в Google Календар CSV-формат
+
+Опції:
+ -h, --help            Вивести довідку.
+ -v, --version         Вивести інформацію про версію.
+ -q, --quiet           Не виводити інформацію в стандартний потік виведення.
+EOF
+}
+
+function showVersion() {
+cat << EOF
+1.0.0
+EOF
+}
+
+# Main Functions ===========================================
+
+# Processes current arguments, removes flags and sets the global variables.
+# Params: original argument list
+# Modifies: arguments list, student_group, csv_file, quiet.
+function process_args() {
+  # Normilize initial arguments
+  options="$(getopt -l "help,version,quiet" -o "hvq" -a -- "$@")"
+  eval set -- "$options"
+  # Process flags
+  while true; do
+      case "$1" in
+      -h|--help) 
+          showHelp
+          exit 0
+          ;;
+      -v|--version) 
+          showVersion
+          exit 0
+          ;;
+      -q|--quiet)
+          quiet=true
+          ;;
+      --)
+          shift
+          break;;
+      esac
+      shift
+  done
+  
+  # Init student group, if given, and csv_file
+  if [[ $# > 1 ]]; then
+    group="$1"
+    shift
+  fi
+  echo 'Arg $1:' $1
+  csv_file="$1"
+  shift
+}
+
+# Promts user to select a CSV file matching the pattern.
+# Return: File name
+#         Or exit code 1
+function select_file() {
+  local file
+  select file in $(ls | grep '^TimeTable_.._.._20..\.csv$' | sort -u) 'Вийти'; do 
+    case "$file" in
+      '')
+        continue
+        ;;
+      'Вийти')
+        exit 1
+        ;;
+      *)
+        echo $file
+        return 0
+        ;;
+    esac
+  done
+}
+
+# Checks if file exists and is writable, and exit if not.
+# Params: File name.
+# Returns: 4 - File do not exists;
+#          3 - File is read-only;
+#          0 - File is fine.
+function check_file() {
+  local file="$1"
+  # Check file existance
+  if [ ! -f "$file" ]; then
+    return 4
+  fi
+  # Check if the file is read-only
+  if [ ! -r "$file" ]; then
+    return 3
+  fi
+  return 0
+}
+
+# Get the data from CSV in appropriate format.
+# Params: File name.
+# Returns: Raw CSV data with fixed line endings in UTF-8.
+function get_raw_data() {
+  local file="$1"
+  cat "$file" | sed 's/\r/\r\n/g' | iconv -f cp1251 -t utf8
+}
+
+# Get a set of groups from the CSV
+# Params: Raw CSV data (from stdin)
+# Returns: List of groups separated by new line;
+#          Empty string, if file was created for a single group.
+function get_groups() {
+  gawk -vFPAT='[^,]*|"[^"]*"' 'NR!=1 && /"([^"]+) - / {
+  gsub(/"/, "", $1)
+  split($1, g, " - ")
+  printf("%s\n", g[1])
+}' | sort | uniq
+}
+
+# Promts user to select a group.
+# Return: Group identifier
+#         Or exit code 1
+function select_group() {
+  groups=$@
+  select group in $groups 'Завершити роботу'; do
+    case $group in
+      '')
+        ;;
+      'Завершити роботу')
+        exit 1
+        ;;
+      *)
+        echo $group
+        break
+        ;;
+    esac
+  done
+}
+
+# Implementation ===========================================
+
+## Globals =================================================
+quiet=false
+
+group=''
+csv_file=''
+
+## Pre-Process =============================================
+# Process arguments and flags, if any.
+# After that, if csv_file wasn't initialized, asks user to select a file.
+# Then, checks the file and gets the data, if checks are passed.
+# Next, it gets list of groups from the data.
+# If there was no group in list it is considered that file should be created 
+# for a single group mentioned in the file, ignoring one that was passed as an argument.
+# If there are groups, checks if current group is in list and asks user to select one,
+# if the group is not in the list.
+
+if (($# > 0)); then process_args $*; fi
+if [ -z "$csv_file" ]; then csv_file="$(select_file)"; fi
+if [[ $? == 1 ]]; then exit 0; fi
+
+check_file "$csv_file"
+case $? in
+  0) # All checks passed, continue processing
+    ;;
+  3) # File not readable
+    err "Файл $file недоступний для читання."
+    exit 3
+    ;;
+  4) # File not found
+    err "Файл $file не знайдено."
+    exit 4
+    ;;
+esac
+
+raw_data="$(get_raw_data $csv_file)"
+groups="$(get_groups <<< $raw_data)"
+
+if [ -n "$groups" ]; then
+  if [ -n "$group" ] && [[ $groups != *" $group "* ]]; then 
+    echo "Група $group відсутня у файлі."
+  fi
+
+  group=''
+  echo 'Оберіть групу:'
+  group=$(select_group $groups)
+  if [[ $? == 1 ]]; then exit 0; fi
+fi
+
+# Processing ===============================================
+
+# cat $csv_file | sed 's/\r/\r\n/g' | iconv -f cp1251 -t utf8 | gawk -vFPAT='[^,]*|"[^"]*"' '
+#   function format_date(date) {
+#   gsub(/"/, "", date)
+#   split(date, d, ".")
+#   return sprintf("\"%02d/%02d/%04d\"", d[2], d[1], d[3])
+# }
+# 
+# function format_time(time) {
+#   gsub(/"/, "", time)
+#   split(time, t, ":") # hh:mm:ss # $1 $2 $3
+#   if (t[1] == "00" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+#   if (t[1] == "12" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d KekPM\"", t[1], t[2])
+#   if (t[1] >= 12) return sprintf("\"%02d:%02d PM\"", t[1] - 12, t[2])
+#   return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+# }
+# 
+# BEGIN { print "\"Subject\",\"Start Date\",\"Start Time\",\"End Date\",\"End Time\",\"Description\"" }
+# 
+# NR!=1 {
+#   $2 = format_date($2)
+#   $3 = format_time($3)
+#   $4 = format_date($4)
+#   $5 = format_time($5)
+#   print $2, $3, $4, $5, $1, $12
+# }
+# ' OFS=',' | sort > output2.txt
+
+echo "Кінець"
