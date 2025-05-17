@@ -1,0 +1,18 @@
+{
+    "cart": {
+        "items": [
+            {
+                "id": 1,
+                "amount": 10
+            },
+            {
+                "id": 2,
+                "amount": 10
+            }
+        ]
+    },
+    "profile": {
+        "name": "",
+        "age": 15
+    }
+}
