@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS [OrderItems];
+DROP TABLE IF EXISTS [Orders];
+DROP TABLE IF EXISTS [CustomerProfiles];
+DROP TABLE IF EXISTS [UserIdentities];
+DROP TABLE IF EXISTS [Products];
+DROP TABLE IF EXISTS [Images];
+DROP TABLE IF EXISTS [Currencies];
