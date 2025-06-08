@@ -1,0 +1,757 @@
+﻿МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
+
+
+Катедра Програмної інженерії
+
+
+
+
+
+
+ЗВІТ
+З ЛАБОРАТОРНОЇ РОБОТИ №4
+з дисципліни «Скриптові мови програмування»
+з теми «Структурування коду, робота з формами, автентифікація та авторизація»
+
+
+
+
+
+Виконав:	Перевірив:
+ст. гр. ПЗПІ-23-1	Ст. викл. катедри ПІ
+Левченко Є.Д. 	Сокорчук І.П.
+
+
+
+
+
+Харків 2025 
+
+     СТРУКТУРУВАННЯ КОДУ, РОБОТА З ФОРМАМИ, АВТЕНТИФІКАЦІЯ ТА АВТОРИЗАЦІЯ
+     1 ІСТОРІЯ ЗМІН
+     Таблиця 1.1 – Історія змін
+№ДатаВерсія звітуОпис змін та виправлень108.06.20250.1Створено     
+     2 МЕТА РОБОТИ
+     Навчитися масштабувати код програм, працювати з формами, здійснювати авторизацію та обмеження прав доступу.
+     3 ЗАВДАННЯ
+     Використовуючи матеріал попередніх лабораторних робіт, потрібно додати такий функціонал:
+* прибрати дублювання шапки і підвалу сайту (якщо воно є);
+* додати сторінку логіна. Обмежити доступ до сайту не залогіненим користувачам;
+* додати сторінку профілю з можливістю завантажити фото.
+     4 ОПИС ВИКОНАНОЇ РОБОТИ
+     Оновлений обробник запитів відповідає за маршрутизацію запитів, керування сесіями та підключення відповідних контролерів. На початку файлу визначаються константи, такі як DATABASE_DSN для підключення до бази даних SQLite, DEFAULT_CONTROLLER, та масив ROUTES, який встановлює відповідність між URL-шляхами та іменами контролерів [див. додаток Б.1, рядки 19-29]. Також визначено AUTHORIZED_ONLY_CONTROLLERS, що містить перелік контролерів, які вимагають авторизації користувача [див. додаток Б.1, рядки 30-33]. Для завантаження файлів визначено константи UPLOAD_DIR_BASE, UPLOAD_DIR та UPLOAD_DIR_URL [див. додаток Б.1, рядки 34-36].
+     Далі обробник перевіряє статус сесії та, якщо вона не розпочата, ініціює її [див. додаток Б.1, рядки 38-40]. Також ініціалізуються змінні сесії для кошика ($_SESSION['cart']) та інформації про користувача ($_SESSION['user']). Якщо користувач не авторизований і не є гостем, йому присвоюється унікальний гостьовий ідентифікатор [див. додаток Б.1, рядки 41-51].
+     Для роботи з вбудованим PHP-сервером обробник перевіряє, чи запит стосується існуючого файлу, і якщо так, дозволяє серверу обробити його самостійно [див. додаток Б.1, рядки 53-58].
+     Відбувається підключення до бази даних SQLite за допомогою PDO, при цьому встановлюються атрибути для обробки помилок та режиму вибірки даних [див. додаток Б.1, рядки 59-67]. Якщо ідентифікатор користувача присутній у сесії, виконується перевірка його існування в базі даних; якщо користувач не знайдений, його ідентифікатор у сесії обнуляється [див. додаток Б.1, рядки 69-77].
+     Отримується метод запиту (GET або POST) та шлях URL [див. додаток Б.1, рядки 79-81]. На основі шляху визначається контролер та дія (action), яку необхідно виконати [див. додаток Б.1, рядки 82-86]. Якщо контролер не знайдено, або файл контролера не існує, генерується помилка 404 та виконується перенаправлення на відповідну сторінку [див. додаток Б.1, рядки 87-90, 98-104].
+     Обробник перевіряє, чи потрібна автентифікація для поточного контролера. Якщо так, і користувач не авторизований, генерується помилка 401 (несанкціонований доступ) і відбувається перенаправлення на сторінку помилки [див. додаток Б.1, рядки 91-97].
+     Після успішної перевірки підключається файл відповідного контролера [див. додаток Б.1, рядок 106]. Перевіряється наявність зазначеної дії (функції) в контролері, і якщо її немає, знову генерується помилка 404 [див. додаток Б.1, рядки 107-112]. Нарешті, викликається визначена дія контролера, якій передаються параметри запиту (дані з $_POST або $_GET) [див. додаток Б.1, рядки 114-115]. Після виконання дії скрипт завершує свою роботу [див. додаток Б.1, рядок 116].
+     Сторінки помилок 401 та 404 мають стандартну структуру з підключенням шапки та підвалу сайту. Сторінка помилки 401 відображається користувачам, які намагаються отримати доступ до захищених ресурсів без попередньої авторизації [див. додаток Б.2]. Вона містить заголовок з кодом помилки, пояснювальний текст про необхідність входу в систему та посилання для переходу на сторінку авторизації. Сторінка помилки 404 показується при спробі доступу до неіснуючих сторінок сайту [див. додаток Б.3]. Вона включає відповідний код помилки, повідомлення про відсутність запитуваної сторінки та посилання для повернення на головну сторінку сайту. Обидві сторінки використовують єдиний стиль оформлення завдяки підключенню загальних компонентів шапки та підвалу.
+     Контролер конфіденційних даних відповідає за управління процесами авторизації користувачів на сайті [див. додаток Б.4]. Він містить функцію авторизації, яка перевіряє наявність обов'язкових параметрів електронної пошти та пароля, після чого шукає користувача в базі даних за допомогою підготовленого SQL-запиту [див. додаток Б.4, рядки 2-5]. При знаходженні користувача система верифікує введений пароль з хешованою версією, збереженою в базі даних [див. додаток Б.4, рядки 24-27]. Контролер обробляє GET-запити до сторінки авторизації, перевіряючи чи користувач уже увійшов до системи, і в такому випадку перенаправляє його на головну сторінку [див. додаток Б.4, рядки 31-42]. POST-запити для входу в систему обробляються окремою функцією, яка викликає процедуру авторизації та встановлює сесійні змінні при успішній перевірці облікових даних [див. додаток Б.4, рядки 45-68]. Функція виходу з системи очищає сесійні дані користувача та перенаправляє на головну сторінку [див. додаток Б.4, рядки 70-77]. Сторінка авторизації містить форму з полями для введення електронної пошти та пароля, яка відправляє дані методом POST на відповідний контролер [див. додаток Б.5]. Форма також відображає повідомлення про помилки, якщо вони передані через параметри запиту [див. додаток Б.5, рядки 14-17].
+     Контролер профілю користувача керує операціями перегляду та оновлення персональної інформації авторизованих користувачів [див. додаток Б.6]. Він містить SQL-запити для отримання профільних даних користувача з об'єднанням таблиць профілів клієнтів та зображень, а також для вставки нових зображень та оновлення профільної інформації [див. додаток Б.6, рядки 2-25]. Функція отримання профілю виконує запит до бази даних за ідентифікатором користувача та повертає масив з персональними даними [див. додаток Б.6, рядки 26-35]. Функція оновлення профілю валідує передані параметри, використовує транзакції для забезпечення цілісності даних при додаванні нових зображень та оновленні профільної інформації [див. додаток Б.6, рядки 36-82]. GET-запити до сторінки профілю перевіряють авторизацію користувача, отримують профільні дані з бази та підготовлюють повідомлення про помилки для відображення [див. додаток Б.6, рядки 84-113]. POST-запити для оновлення профілю здійснюють детальну валідацію вхідних даних, включаючи перевірку мінімальної довжини імені та прізвища, вікових обмежень та довжини опису [див. додаток Б.6, рядки 115-163]. Контролер також обробляє завантаження файлів зображень профілю, генеруючи унікальні імена файлів та зберігаючи їх у відповідному каталозі [див. додаток Б.6, рядки 171-198]. Сторінка профілю користувача містить комбіновану форму для оновлення персональної інформації та завантаження зображення профілю [див. додаток Б.7]. Форма включає приховані поля з ідентифікаторами користувача та поточного зображення, відображення поточного фото профілю з можливістю попереднього перегляду нового зображення [див. додаток Б.7, рядки 5-15]. Інформаційна частина форми містить поля для введення імені, прізвища, дати народження та опису з відображенням відповідних повідомлень про помилки валідації [див. додаток Б.7, рядки 16-57]. JavaScript-скрипт забезпечує функціональність попереднього перегляду завантажуваного зображення профілю [див. додаток Б.7, рядки 59-71].
+     Оновлений скрипт ініціалізації бази даних містить структуру таблиць для зберігання валют, зображень, товарів, ідентифікаторів користувачів та профілів клієнтів [див. додаток Б.8]. Таблиця профілів клієнтів включає поля для персональних даних користувача, зокрема ім'я, прізвище, дату народження та опис, а також зв'язок з ідентифікатором зображення профілю [див. додаток Б.8, рядки 69-80]. Структура таблиці передбачає зовнішні ключі для зв'язку з таблицями зображень та ідентифікаторів користувачів, забезпечуючи цілісність даних при видаленні записів [див. додаток Б.8, рядки 77-79]. Для оптимізації запитів створюється індекс за ідентифікатором користувача [див. додаток Б.8, рядок 81]. Код для ініціалізації нового користувача автоматично створює запис в таблиці ідентифікаторів користувачів з хешованим паролем та відповідний порожній профіль клієнта [див. додаток Б.9]. Скрипт використовує підготовлені запити для безпечного вставлення даних та отримує ідентифікатор новоствореного користувача для створення пов'язаного профілю [див. додаток Б.9, рядки 18-25]. Оновлений bash-скрипт для створення бази даних автоматизує процес видалення існуючої бази, створення нової структури та ініціалізації тестового користувача [див. додаток Б.10]. Скрипт перевіряє наявність необхідних файлів, виконує SQL-команди для створення схеми бази даних та запускає PHP-скрипт для додавання початкових даних [див. додаток Б.10, рядки 27-38].
+     5 ВИСНОВОКИ
+     У ході виконання лабораторної роботи було оновлено проєкт, створений на попередній лабораторній роботі. Було реалізовано функції для авторизації, з забезпеченням безпечного зберігання паролів, та керування профілем користувача. Таким чином, було масштабовано код програми, покращено знання роботи з формами та обмеженням прав доступу неавторизованим користувачам.
+
+
+     ДОДАТОК А
+     Відеозапис
+     
+     Відеозапис презентації результатів лабораторної роботи: https://youtu.be/10W23kjJe4s
+     Хронологічний опис відеозапису:
+     00:00 – Молитва
+     00:59 – Опис змін у обробнику запитів
+     02:42 – Опис змін у базі даних
+     03:23 – Акцент на додаванні авторизації в обробнику запитів
+     04:29 – Опис сторінок помилок та огляд змін у файлах
+     04:58 – Опис контролеру та сторінки авторизації
+     08:06 – Опис контролеру та сторінки профілю користувача
+     13:28 – Демонстрація авторизації
+     14:49 – Демонстрація профілю користувача
+     
+
+     ДОДАТОК Б
+     Програмний код
+     GitHub репозиторій: https://github.com/NureLevchenkoYehor/smp-pzpi-23-1-levchenko-yehor/tree/main/Lab4/smp-pzpi-23-1-levchenko-yehor-lab4
+     Б.1 Оновлений обробник запитів
+  1. <?php
+  2. // Helper functions
+  3. // function array_find(array $array, callable $callback): mixed {
+  4. //     foreach ($array as $key => $value) {
+  5. //         if ($callback($value, $key)) {
+  6. //             return $value;
+  7. //         }
+  8. //     }
+  9. //     return null;
+ 10. // }
+ 11. // function array_any(array $array, callable $callback): bool {
+ 12. //     foreach ($array as $key => $value) {
+ 13. //         if ($callback($value, $key)) {
+ 14. //             return true;
+ 15. //         }
+ 16. //     }
+ 17. //     return false;
+ 18. // }
+ 19. // Define constants
+ 20. const DATABASE_DSN = 'sqlite:' . __DIR__ . '/database/data.sqlite';
+ 21. const DEFAULT_CONTROLLER = 'products-controller';
+ 22. const ROUTES = [
+ 23.   '/' => DEFAULT_CONTROLLER,
+ 24.   '/home' => DEFAULT_CONTROLLER,
+ 25.   '/products' => DEFAULT_CONTROLLER,
+ 26.   '/cart' => 'cart-controller',
+ 27.   '/credential' => 'credential-controller',
+ 28.   '/profile' => 'profile-controller',
+ 29. ];
+ 30. const AUTHORIZED_ONLY_CONTROLLERS = [
+ 31.   'cart-controller',
+ 32.   'products-controller',
+ 33. ];
+ 34. const UPLOAD_DIR_BASE = '/assets/uploads/';
+ 35. const UPLOAD_DIR = __DIR__ . UPLOAD_DIR_BASE;
+ 36. define('UPLOAD_DIR_URL', 'http://' . $_SERVER['HTTP_HOST'] . UPLOAD_DIR_BASE);
+ 37. // Start session if not started
+ 38. if (session_status() === PHP_SESSION_NONE) {
+ 39.   session_start();
+ 40. }
+ 41. // Init session variables if not set
+ 42. if (!isset($_SESSION['cart'])) {
+ 43.   $_SESSION['cart'] = [];
+ 44. }
+ 45. if (!isset($_SESSION['user'])) {
+ 46.   $_SESSION['user'] = [ 'id' => null ];
+ 47. }
+ 48. if (!isset($_SESSION['user']['id']) && !isset($_SESSION['guest'])) {
+ 49.   $guest_id = bin2hex(random_bytes(16));
+ 50.   $_SESSION['guest'] = [ 'id' => $guest_id ];
+ 51. }
+ 52. // Handle files for PHP server
+ 53. if (php_sapi_name() === 'cli-server') {
+ 54.   $path = __DIR__ .  parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+ 55.   if (is_file($path)) {
+ 56.     return false;
+ 57.   }
+ 58. }
+ 59. // Get PDO instance
+ 60. try {
+ 61.   $pdo = new PDO(DATABASE_DSN);
+ 62.   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+ 63.   $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+ 64. } catch (\Throwable $th) {
+ 65.   http_response_code(500);
+ 66.   throw $th;
+ 67. }
+ 68. // Reset user id if user was deleted
+ 69. if (isset($_SESSION['user']['id'])) {
+ 70.   $user_id = $_SESSION['user']['id'];
+ 71.   $stmt = $pdo->prepare('SELECT [user_identity_id] FROM [UserIdentities] WHERE [user_identity_id] = :id LIMIT 1;');
+ 72.   $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+ 73.   $stmt->execute();
+ 74.   $user = $stmt->fetch();
+ 75.   if ($user === false) {
+ 76.     $_SESSION['user'] = [ 'id' => null ];
+ 77.   }
+ 78. }
+ 79. // Get request method and path
+ 80. $request_method = $_SERVER['REQUEST_METHOD'];
+ 81. $request_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+ 82. // Get controller and action
+ 83. $segments = explode('/', trim($request_path, '/'));
+ 84. $controller = ROUTES["/$segments[0]"] ?? null;
+ 85. $action = $segments[1] ?? 'index';
+ 86. if ($controller === null) {
+ 87.   http_response_code(404);
+ 88.   header('Location: /page404.php');
+ 89.   exit;
+ 90. }
+ 91. // Check if controller requires authentication
+ 92. $require_auth = array_any(AUTHORIZED_ONLY_CONTROLLERS, fn($c) => $c === $controller);
+ 93. if ($require_auth && !isset($_SESSION['user']['id']) ) {
+ 94.   http_response_code(401);
+ 95.   header('Location: /page401.php');
+ 96.   exit;
+ 97. }
+ 98. // Get controller file path
+ 99. $controller_file = __DIR__ . "/$controller.php";
+100. if (!file_exists($controller_file)) {
+101.   http_response_code(404);
+102.   header('Location: /page404.php');
+103.   exit;
+104. }
+105. // Get controller and action
+106. require $controller_file;
+107. // Check if action exists
+108. if (!function_exists($action)) {
+109.   http_response_code(404);
+110.   header('Location: /page404.php');
+111.   exit;
+112. }
+113. // Call action with parameters
+114. $params = $request_method === 'POST' ? $_POST : $_GET;
+115. $action($params);
+116. exit;
+     Б.2 Сторінка помилки 401
+1. <?php require 'header.php' ?>
+2. <h1>401</h1>
+3. <p>Please log in first.</p>
+4. <a href="/credential">Go to the login page</a>
+5. <?php require 'footer.php' ?>
+     Б.3 Сторінка помилки 404
+1. <?php require 'header.php' ?>
+2. <h1>404</h1>
+3. <p>Sorry, the page you are looking for does not exist.</p>
+4. <a href="/">Go back to the homepage</a>
+5. <?php require 'footer.php' ?>
+     Б.4 Контролер конфіденційних даних
+ 1. <?php
+ 2. const SQL_FIND_IDENTITY_BY_EMAIL = '
+ 3. SELECT * FROM [UserIdentities]
+ 4. WHERE [user_identity_email] = :email
+ 5. LIMIT 1;';
+ 6. function authorize(PDO $pdo, array $params) {
+ 7.   // Validate the input parameters
+ 8.   if (!isset($params['email']) || !isset($params['password'])) {
+ 9.     throw new InvalidArgumentException('Missing email or password');
+10.   }
+11.   // Use this to validate the email format
+12.   // if (!filter_var($params['email'], FILTER_VALIDATE_EMAIL)) {
+13.   //     throw new InvalidArgumentException('Invalid email format');
+14.   // }
+15.   // Find the user identity in the database
+16.   $stmt = $pdo->prepare(SQL_FIND_IDENTITY_BY_EMAIL);
+17.   $stmt->bindValue(':email', $params['email']);
+18.   $stmt->execute();
+19.   $user = $stmt->fetch();
+20.   if (!$user) {
+21.     return -1;
+22.   }
+23.   // Verify the password
+24.   $verified = password_verify($params['password'], $user->user_identity_password_hash);
+25.   if (!$verified) {
+26.     return -1;
+27.   }
+28.   return $user->user_identity_id;
+29. }
+30. // GET /credential
+31. function index(array $params) {
+32.   // Check if the user is already logged in
+33.   if (isset($_SESSION['user']['id'])) {
+34.     // Redirect to the home page
+35.     header('Location: /');
+36.     exit;
+37.   }
+38.   // Check if there is an error message
+39.   $error = $params['error'] ?? null;
+40.   require './credential.php';
+41.   exit;
+42. }
+43. // POST /credential/login
+44. // This function is called when the user submits the login form
+45. function login(array $params) {
+46.   // Validate the input parameters
+47.   if (!isset($params['email']) || !isset($params['password'])) {
+48.     http_response_code(400);
+49.     echo json_encode(['error' => 'Invalid params array. Email or password are missing']);;
+50.   }
+51.   global $pdo;
+52.   // Check if the user is authorized
+53.   $authorized = authorize($pdo, [
+54.     'email' => $params['email'],
+55.     'password' => $params['password'],
+56.   ]);
+57.   if ($authorized > 0) {
+58.     // Set the session variables
+59.     $_SESSION['user']['id'] = $authorized;
+60.     $_SESSION['user']['login_timestamp'] = time();
+61.     // Redirect to the home page
+62.     header('Location: /');
+63.   } else {
+64.     // Redirect to the login page with an error message
+65.     header('Location: /credential?error=invalid_credentials');
+66.   }
+67.   exit;
+68. }
+69. // POST /credential/logout
+70. function logout() {
+71.   // Unset the session variables
+72.   unset($_SESSION['user']['id']);
+73.   unset($_SESSION['user']['login_timestamp']);
+74.   // Redirect to the home page
+75.   header('Location: /');
+76.   exit;
+77. }
+     Б.5 Сторінка авторизації
+ 1. <?php require 'header.php' ?>
+ 2. <form class="login-form" action="/credential/login" method="post">
+ 3.   <!-- <label for="login">Login:</label>
+ 4.   <input type="text" id="login" name="login" required>
+ 5.   <br> -->
+ 6.   <!-- <label for="email">Email:</label>
+ 7.   <input type="email" id="email" name="email" required>
+ 8.   <br> -->
+ 9.   <label for="email">Email:</label>
+10.   <input type="text" id="email" name="email" required>
+11.   <br>
+12.   <label for="password">Password:</label>
+13.   <input type="password" id="password" name="password" required>
+14.   <?php if (isset($error) && !empty($error)): ?>
+15.   <br>
+16.     <p style="color: red;"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
+17.   <?php endif; ?>
+18.   <br>
+19.   <button type="submit">Submit</button>
+20. </form>
+21. <?php require 'footer.php' ?>
+     Б.6 Контролер профілю користувача
+  1. <?php
+  2. const SQL_FIND_USER_PROFILE = '
+  3. SELECT
+  4.   c.[customer_first_name] AS first_name,
+  5.   c.[customer_last_name] AS last_name,
+  6.   c.[customer_birth_date] AS birthdate,
+  7.   c.[customer_description] AS description,
+  8.   i.[image_id] AS image_id,
+  9.   i.[image_url] AS image_url,
+ 10.   i.[image_name] AS image_name
+ 11. FROM [CustomerProfiles] c
+ 12. LEFT JOIN [Images] i ON c.[customer_profile_image_id] = i.[image_id]
+ 13. WHERE [customer_identity_id] = :id
+ 14. LIMIT 1;';
+ 15. const SQL_INSERT_IMAGE = '
+ 16. INSERT INTO [Images] ([image_name], [image_url])
+ 17. VALUES (:image_name, :image_url);';
+ 18. const SQL_UPDATE_PROFILE = '
+ 19. UPDATE [CustomerProfiles] SET
+ 20.   [customer_first_name] = :first_name,
+ 21.   [customer_last_name] = :last_name,
+ 22.   [customer_birth_date] = :birthdate,
+ 23.   [customer_description] = :description,
+ 24.   [customer_profile_image_id] = :image_id
+ 25. WHERE [customer_identity_id] = :user_id;';
+ 26. function get_profile(PDO $pdo, int $userId) {
+ 27.   $stmt = $pdo->prepare(SQL_FIND_USER_PROFILE);
+ 28.   $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+ 29.   $stmt->execute();
+ 30.   $user_profile = $stmt->fetch();
+ 31.   if (!$user_profile) {
+ 32.     return null;
+ 33.   }
+ 34.   return (array) $user_profile;
+ 35. }
+ 36. function update_profile(PDO $pdo, array $params) {
+ 37.   // Validate the parameters (in a cool way)
+ 38.   $expectedParams = [
+ 39.     'user_id',
+ 40.     'first_name',
+ 41.     'last_name',
+ 42.     'birthdate',
+ 43.     'description',
+ 44.     'image_id',
+ 45.     'image_name',
+ 46.     'image_url'
+ 47.   ];
+ 48.   $missingParams = array_diff($expectedParams, array_keys($params));
+ 49.   if (count($missingParams) > 0) {
+ 50.     throw new InvalidArgumentException('Missing parameters: ' . implode(', ', $missingParams));
+ 51.   }
+ 52.   // Update profile
+ 53.   $pdo->beginTransaction();
+ 54.   // 1. Insert the image into the Images table if there's a new image
+ 55.   if (!isset($params['image_id'])) {
+ 56.     $stmt = $pdo->prepare(SQL_INSERT_IMAGE);
+ 57.     $stmt->bindParam(':image_name', $params['image_name']);
+ 58.     $stmt->bindParam(':image_url', $params['image_url']);
+ 59.     $stmt->execute();
+ 60.     $imageId = $pdo->lastInsertId();
+ 61.     if (!$imageId) {
+ 62.       $pdo->rollBack();
+ 63.       return false;
+ 64.     }
+ 65.     $params['image_id'] = $imageId;
+ 66.   }
+ 67.   // 2. Update the customer profile with the new image ID
+ 68.   $stmt = $pdo->prepare(SQL_UPDATE_PROFILE);
+ 69.   $stmt->bindParam(':first_name', $params['first_name']);
+ 70.   $stmt->bindParam(':last_name', $params['last_name']);
+ 71.   $stmt->bindParam(':birthdate', $params['birthdate']);
+ 72.   $stmt->bindParam(':description', $params['description']);
+ 73.   $stmt->bindParam(':image_id', $params['image_id']);
+ 74.   $stmt->bindParam(':user_id', $params['user_id']);
+ 75.   if (!$stmt->execute()) {
+ 76.     $pdo->rollBack();
+ 77.     return false;
+ 78.   }
+ 79.   // 3. Commit the transaction
+ 80.   $pdo->commit();
+ 81.   return true;
+ 82. }
+ 83. // GET /profile
+ 84. function index(array $params) {
+ 85.   // Check if the user is already logged in
+ 86.   if (!isset($_SESSION['user']['id'])) {
+ 87.     // Redirect to the login page
+ 88.     http_response_code(401);
+ 89.     header('Location: /credential/login');
+ 90.     exit;
+ 91.   }
+ 92.   // Prepare profile data
+ 93.   global $pdo;
+ 94.   $userId = $_SESSION['user']['id'];
+ 95.   $profile = get_profile($pdo, $userId);
+ 96.   // Logout if the profile is not found
+ 97.   if (!isset($profile)) {
+ 98.     http_response_code(403);
+ 99.     echo json_encode([
+100.       'status' => 'error',
+101.       'message' => 'Profile not found: ' . $userId
+102.     ]);
+103.     // header('Location: /credential/logout');
+104.     exit;
+105.   }
+106.   // Prepare errors data
+107.   $error = [];
+108.   foreach ($params as $key => $value) {
+109.     $error[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+110.   }
+111.   require './profile.php';
+112.   exit;
+113. }
+114. // POST /profile/update
+115. function update(array $params) {
+116.   // Validate the parameters (in a cool way)
+117.   $expectedParams = [
+118.     'user_id' => 'user id',
+119.     'first_name' => 'first name',
+120.     'last_name' => 'last name',
+121.     'birthdate' => 'birthdate',
+122.     'description' => 'description',
+123.     'image_name' => 'image name',
+124.     'image_url' => 'image url',
+125.   ];
+126.   // Check expected parameters
+127.   $errors = [];
+128.   foreach ($params as $key => $value) {
+129.     // Check if the parameter is expected
+130.     if (!in_array($key, $expectedParams)) {
+131.       continue;
+132.     }
+133.     // Check if the parameter is empty
+134.     if (empty($value)) {
+135.       $errors[$key] = "The {$expectedParams[$key]} field is required.";
+136.     }
+137.   }
+138.   // First and last name must be strings and more than 1 character
+139.   if (strlen($params['first_name']) < 2) {
+140.     $errors['first_name'] = 'First name must be at least 2 characters long.';
+141.   }
+142.   if (strlen($params['last_name']) < 2) {
+143.     $errors['last_name'] = 'Last name must be at least 2 characters long.';
+144.   }
+145.   // user must be at least 16 years old
+146.   $birthdate = new DateTime($params['birthdate']);
+147.   $today = new DateTime();
+148.   $age = $today->diff($birthdate)->y;
+149.   if ($age < 16) {
+150.     $errors['birthdate'] = 'You must be at least 16 years old.';
+151.   }
+152.   // description must be at least 50 characters
+153.   if (strlen($params['description']) < 50) {
+154.     $errors['description'] = 'Description must be at least 50 characters long.';
+155.   }
+156.   // Check if there are any errors
+157.   if (!empty($errors)) {
+158.     // Redirect to the profile page with errors
+159.     http_response_code(400);
+160.     $query = http_build_query($errors);
+161.     header("Location: /profile?$query");
+162.     exit;
+163.   }
+164.   // Prepare parameters
+165.   global $pdo;
+166.   foreach ($params as $key => $value) {
+167.     $params[$key] = htmlspecialchars($value);
+168.   }
+169.   $params['birthdate'] = date('Y-m-d', strtotime($params['birthdate']));
+170.   // Handle the image upload
+171.   $file = $_FILES['profile_image'];
+172.   if (isset($file) && $file['error'] === UPLOAD_ERR_OK) {
+173.     // Extract the original file name without the extension
+174.     $fileName = pathinfo($file['name'], PATHINFO_FILENAME);
+175.     // Generate a unique file name for saving
+176.     $fileSaveName = uniqid() . '_' . basename($file['name']);
+177.     $filePath = UPLOAD_DIR . $fileSaveName;
+178.     // Move the uploaded file to the target directory
+179.     if (move_uploaded_file($file['tmp_name'], $filePath)) {
+180.       // Prepare params for the new image
+181.       $params['image_id'] = null;
+182.       $params['image_name'] = $fileName;
+183.       $params['image_url'] = UPLOAD_DIR_URL . $fileSaveName;
+184.     } else {
+185.       http_response_code(500);
+186.       echo json_encode([
+187.         'status' => 'error',
+188.         'message' => 'Failed to save the uploaded file.',
+189.         'data' => [
+190.           'file' => $file,
+191.           'filePath' => $filePath,
+192.           'fileName' => $fileName,
+193.           'fileSaveName' => $fileSaveName,
+194.         ]
+195.       ]);
+196.       exit;
+197.     }
+198.   }
+199.   // Update the profile
+200.   if (update_profile($pdo, $params)) {
+201.     header('Location: /profile');
+202.   } else {
+203.     http_response_code(500);
+204.     echo json_encode([
+205.       'status' => 'error',
+206.       'message' => 'Failed to update the profile.'
+207.     ]);
+208.   }
+209.   exit;
+210. }
+     Б.7 Сторінка профілю користувача
+ 1. <?php require 'header.php' ?>
+ 2. <!-- Combined profile update and image upload form -->
+ 3. <form class="profile-form" id="profileForm" action="/profile/update" method="POST" enctype="multipart/form-data">
+ 4.   <!-- Hidden input -->
+ 5.   <input type="hidden" name="user_id" value="<?= $_SESSION['user']['id'] ?? ''; ?>">
+ 6.   <input type="hidden" name="image_name" value="<?= $profile['image_name'] ?? ''; ?>">
+ 7.   <input type="hidden" name="image_url" value="<?= $profile['image_url'] ?? ''; ?>">
+ 8.   <input type="hidden" name="image_id" value="<?= $profile['image_id'] ?? ''; ?>">
+ 9.   <div class="profile-image-column">
+10.     <!-- Profile image -->
+11.     <img id="profileImagePreview" src="<?= $profile['image_url'] ?? 'https://placehold.co/400?text=Profile+Picture'; ?>" alt="<?= $profile['image_name'] ?? 'placeholder' ?>">
+12.     <!-- Upload image -->
+13.     <input type="file" id="profile_image" name="profile_image" accept="image/*" style="display:none;">
+14.     <button type="button" onclick="document.getElementById('profile_image').click();">Upload</button><br>
+15.   </div>
+16.   <div class="profile-info-column">
+17.     <div class="profile-info-row">
+18.       <!-- First name label -->
+19.       <div class="form-group">
+20.         <label for="first_name">First Name:</label>
+21.         <input type="text" id="first_name" name="first_name" value="<?= $profile['first_name'] ?? ''; ?>" required><br>
+22.         <?php if (isset($error['first_name'])): ?>
+23.           <p><?= htmlspecialchars($error['first_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+24.           <br>
+25.         <?php endif; ?>
+26.       </div>
+27.       <!-- Last name label -->
+28.       <div class="form-group">
+29.         <label for="last_name">Last Name:</label>
+30.         <input type="text" id="last_name" name="last_name" value="<?= $profile['last_name'] ?? ''; ?>" required><br>
+31.         <?php if (isset($error['last_name'])): ?>
+32.           <p><?= htmlspecialchars($error['last_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+33.           <br>
+34.         <?php endif; ?>
+35.       </div>
+36.       <!-- Birthdate label -->
+37.       <div class="form-group">
+38.         <label for="birthdate">Birthdate:</label>
+39.         <input type="date" id="birthdate" name="birthdate" value="<?= $profile['birthdate'] ?? ''; ?>" required><br>
+40.         <?php if (isset($error['birthdate'])): ?>
+41.           <p><?= htmlspecialchars($error['birthdate'], ENT_QUOTES, 'UTF-8'); ?></p>
+42.           <br>
+43.         <?php endif ?>
+44.       </div>
+45.     </div>
+46.     <div class="form-group" style="height: 100%;">
+47.       <!-- Description label -->
+48.       <label for="description">Description:</label>
+49.       <textarea id="description" name="description" required><?= $profile['description'] ?? ''; ?></textarea><br>
+50.       <?php if (isset($error['description'])): ?>
+51.         <p><?= htmlspecialchars($error['description'], ENT_QUOTES, 'UTF-8'); ?></p>
+52.         <br>
+53.       <?php endif; ?>
+54.     </div>
+55.     <!-- Save button -->
+56.     <button class="save-button" type="submit">Save</button>
+57.   </div>
+58. </form>
+59. <script>
+60.   // JavaScript to handle image preview
+61.   document.getElementById('profile_image').addEventListener('change', function(event) {
+62.     const file = event.target.files[0];
+63.     if (file) {
+64.       const reader = new FileReader();
+65.       reader.onload = function(e) {
+66.         document.getElementById('profileImagePreview').src = e.target.result;
+67.       };
+68.       reader.readAsDataURL(file);
+69.     }
+70.   });
+71. </script>
+72. <?php require 'footer.php' ?>
+     Б.8 Оновлений скрипт ініціалізації бази даних
+ 1. -- Since products have a price, we will need to create a table for the currency.
+ 2. CREATE TABLE IF NOT EXISTS [Currencies] (
+ 3.   -- ISO 4217 currency code is standardized, so it is a acceptable.
+ 4.   [currency_code] TEXT PRIMARY KEY,
+ 5.   [currency_name] TEXT NOT NULL,
+ 6.   [currency_symbol] TEXT NOT NULL
+ 7. );
+ 8. -- Currencies are static, so we can create a table with the default currencies.
+ 9. INSERT INTO [Currencies] ([currency_code], [currency_name], [currency_symbol])
+10. VALUES
+11.   ('UAH', 'Ukrainian Hryvnia',      '₴'),
+12.   ('USD', 'United States Dollar',   '$'),
+13.   ('EUR', 'Euro',                   '€'),
+14.   ('GBP', 'British Pound Sterling', '£'),
+15.   ('JPY', 'Japanese Yen',           '¥'),
+16.   ('AUD', 'Australian Dollar',      'A$'),
+17.   ('CAD', 'Canadian Dollar',        'C$'),
+18.   ('CHF', 'Swiss Franc',            'CHF'),
+19.   ('CNY', 'Chinese Yuan Renminbi',  '¥'),
+20.   ('SEK', 'Swedish Krona',          'kr'),
+21.   ('NZD', 'New Zealand Dollar',     'NZ$');
+22. -- Since products have an image, we will need to create a table for the images.
+23. CREATE TABLE IF NOT EXISTS [Images] (
+24.   -- Both path and name could be changed, so the id is better here.
+25.   [image_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+26.   [image_url] TEXT NOT NULL,
+27.   [image_name] TEXT NOT NULL,
+28.   UNIQUE([image_url])
+29. );
+30. -- In the current system, images are static, so we have to create a table with the default images.
+31. -- Image paths will point at the localserver with the port 8080, since we don't have a
+32. -- specific server to store images.
+33. INSERT INTO [Images] ([image_id], [image_url], [image_name])
+34. VALUES
+35.   (1, 'http://localhost:8080/assets/images/milk.png',    'milk.png'),
+36.   (2, 'http://localhost:8080/assets/images/black.jpg',   'black.jpg'),
+37.   (3, 'http://localhost:8080/assets/images/cheese.png',  'cheese.png'),
+38.   (4, 'http://localhost:8080/assets/images/white.png',   'white.png'),
+39.   (5, 'http://localhost:8080/assets/images/kefir.png',   'kefir.png'),
+40.   (6, 'http://localhost:8080/assets/images/water.png',   'water.png'),
+41.   (7, 'http://localhost:8080/assets/images/cookies.jpg', 'cookies.jpg');
+42. CREATE TABLE IF NOT EXISTS [Products] (
+43.   [product_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+44.   [product_name] TEXT NOT NULL,
+45.   [product_price] REAL NOT NULL CHECK([product_price] >= 0),
+46.   [currency_code] TEXT NOT NULL,
+47.   [image_id] INTEGER,
+48.   -- Products depends on currencies, since without currency we can't have a price.
+49.   FOREIGN KEY ([currency_code]) REFERENCES Currencies([currency_code]) ON DELETE Cascade,
+50.   FOREIGN KEY ([image_id]) REFERENCES Images([image_id]) ON DELETE SET NULL
+51. );
+52. -- In the current system, products are static, thus it is required to fill the table.
+53. INSERT INTO [Products] ([product_id], [product_name], [product_price], [currency_code], [image_id])
+54. VALUES
+55.   (1, 'Молоко пастеризоване', 12, 'UAH', 1),
+56.   (2, 'Хліб чорний',          9,  'UAH', 2),
+57.   (3, 'Сир білий',            21, 'UAH', 3),
+58.   (4, 'Сметана 20%',          25, 'UAH', 4),
+59.   (5, 'Кефір 1%',             19, 'UAH', 5),
+60.   (6, 'Вода газована',        18, 'UAH', 6),
+61.   (7, 'Печиво "Весна"',       14, 'UAH', 7);
+62. -- Registered user identities
+63. CREATE TABLE IF NOT EXISTS [UserIdentities] (
+64.   [user_identity_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+65.   [user_identity_email] TEXT NOT NULL UNIQUE,
+66.   [user_identity_password_hash] TEXT NOT NULL
+67. );
+68. -- Registered user profiles
+69. CREATE TABLE IF NOT EXISTS [CustomerProfiles] (
+70.   [customer_profile_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+71.   [customer_first_name] TEXT,
+72.   [customer_last_name] TEXT,
+73.   [customer_birth_date] TEXT,
+74.   [customer_description] TEXT,
+75.   [customer_profile_image_id] INTEGER,
+76.   [customer_identity_id] INTEGER NOT NULL,
+77.   FOREIGN KEY ([customer_profile_image_id]) REFERENCES Images([image_id]) ON DELETE SET NULL,
+78.   FOREIGN KEY ([customer_identity_id]) REFERENCES UserIdentities([user_identity_id]) ON DELETE CASCADE,
+79.   UNIQUE([customer_identity_id])
+80. );
+81. CREATE INDEX IF NOT EXISTS [idx_customer_identity_id] ON [CustomerProfiles]([customer_identity_id]);
+82. -- Orders for both registered and unregistered users
+83. CREATE TABLE IF NOT EXISTS [Orders] (
+84.   [order_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+85.   [customer_id] INTEGER,
+86.   [guest_id] TEXT,
+87.   FOREIGN KEY ([customer_id]) REFERENCES UserIdentities([user_identity_id]) ON DELETE SET NULL
+88. );
+89. CREATE TABLE IF NOT EXISTS [OrderItems] (
+90.   [order_item_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+91.   [product_id] INTEGER NOT NULL,
+92.   [order_id] INTEGER NOT NULL,
+93.   [order_item_quantity] INTEGER NOT NULL DEFAULT 1 CHECK([order_item_quantity] > 0),
+94.   UNIQUE([product_id], [order_id]),
+95.   -- Item shouldn't exist without an order.
+96.   FOREIGN KEY ([product_id]) REFERENCES [Products]([product_id]) ON DELETE Cascade,
+97.   FOREIGN KEY ([order_id]) REFERENCES [Orders]([order_id]) ON DELETE Cascade
+98. );
+     Б.9 Код для ініціалізації нового користувача
+ 1. <?php
+ 2. // This script is required to insert a new user into the database for this specific lab.
+ 3. // Declare global variables
+ 4. const DATABASE_DSN = 'sqlite:' . __DIR__ . '/data.sqlite';
+ 5. const SQL_INSERT_USER = '
+ 6. INSERT INTO [UserIdentities] ([user_identity_email], [user_identity_password_hash])
+ 7. VALUES (:email, :password);';
+ 8. CONST SQL_INSERT_CUSTOMER = '
+ 9. INSERT INTO [CustomerProfiles] ([customer_identity_id])
+10. VALUES (:identity_id);';
+11. // Get the database connection
+12. try {
+13.   $pdo = new PDO(DATABASE_DSN);
+14.   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+15. } catch (\Throwable $th) {
+16.   throw $th;
+17. }
+18. $stmt = $pdo->prepare(SQL_INSERT_USER);
+19. $stmt->bindValue(':email', 'Test');
+20. $stmt->bindValue(':password', password_hash('123123', PASSWORD_DEFAULT));
+21. $stmt->execute();
+22. $identity_id = $pdo->lastInsertId();
+23. $stmt = $pdo->prepare(SQL_INSERT_CUSTOMER);
+24. $stmt->bindValue(':identity_id', $identity_id);
+25. $stmt->execute();
+     Б.10 Оновлений скрипт на створення бази даних
+ 1. #!/bin/bash
+ 2. # This script sets up the SQLite database for the application.
+ 3. # It removes any existing database file, creates a new one,
+ 4. # and executes the SQL script to create the database schema.
+ 5. # Usage: ./up.sh in the src/database directory
+ 6. DB_FILE="data.sqlite"
+ 7. CREATE_SCRIPT="create.sql"
+ 8. INSERT_SCRIPT="insert-user.php"
+ 9. if [ -f "$DB_FILE" ]; then
+10.   echo "Removing existing database file: $DB_FILE"
+11.   rm "$DB_FILE"
+12. fi
+13. echo "Creating new database file: $DB_FILE"
+14. touch "$DB_FILE"
+15. if [ ! -f "$DB_FILE" ]; then
+16.   echo "Failed to create database file: $DB_FILE"
+17.   exit 1
+18. fi
+19. if [ ! -f "$CREATE_SCRIPT" ]; then
+20.   echo "SQL script not found: $CREATE_SCRIPT"
+21.   exit 1
+22. fi
+23. if [ ! -f "$INSERT_SCRIPT" ]; then
+24.   echo "Insert script not found: $INSERT_SCRIPT"
+25.   exit 1
+26. fi
+27. echo "Executing SQL script: $CREATE_SCRIPT"
+28. if ! sqlite3 "$DB_FILE" < "$CREATE_SCRIPT"; then
+29.   echo "Failed to execute SQL script: $CREATE_SCRIPT"
+30.   exit 1
+31. fi
+32. echo "Database schema created."
+33. echo "Executing insert script: $INSERT_SCRIPT"
+34. if ! php "$INSERT_SCRIPT"; then
+35.   echo "Failed to execute insert script: $INSERT_SCRIPT"
+36.   exit 1
+37. fi
+38. echo "Insert script executed successfully."
+39. echo "Database setup complete."
+     2
+     
+     
