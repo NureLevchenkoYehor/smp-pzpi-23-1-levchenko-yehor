@@ -1,23 +1,23 @@
 <?php
 
 // Helper functions
-function array_find(array $array, callable $callback): mixed {
-    foreach ($array as $key => $value) {
-        if ($callback($value, $key)) {
-            return $value;
-        }
-    }
-    return null;
-}
+// function array_find(array $array, callable $callback): mixed {
+//     foreach ($array as $key => $value) {
+//         if ($callback($value, $key)) {
+//             return $value;
+//         }
+//     }
+//     return null;
+// }
 
-function array_any(array $array, callable $callback): bool {
-    foreach ($array as $key => $value) {
-        if ($callback($value, $key)) {
-            return true;
-        }
-    }
-    return false;
-}
+// function array_any(array $array, callable $callback): bool {
+//     foreach ($array as $key => $value) {
+//         if ($callback($value, $key)) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 // Define constants
 const DATABASE_DSN = 'sqlite:' . __DIR__ . '/database/data.sqlite';

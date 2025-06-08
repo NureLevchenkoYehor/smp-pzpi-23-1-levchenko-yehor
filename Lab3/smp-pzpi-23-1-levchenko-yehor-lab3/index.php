@@ -1,14 +1,14 @@
 <?php
 
 // Helper function
-function array_find(array $array, callable $callback): mixed {
-    foreach ($array as $key => $value) {
-        if ($callback($value, $key)) {
-            return $value;
-        }
-    }
-    return null;
-}
+// function array_find(array $array, callable $callback): mixed {
+//     foreach ($array as $key => $value) {
+//         if ($callback($value, $key)) {
+//             return $value;
+//         }
+//     }
+//     return null;
+// }
 
 // Handle files for PHP server
 if (php_sapi_name() === 'cli-server') {
