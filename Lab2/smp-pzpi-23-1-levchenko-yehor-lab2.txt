@@ -1,0 +1,664 @@
+﻿МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
+
+
+Катедра Програмної інженерії
+
+
+
+
+
+
+ЗВІТ
+З ЛАБОРАТОРНОЇ РОБОТИ №2
+з дисципліни «Скриптові мови програмування»
+
+
+
+
+
+
+Виконав:	Перевірив:
+ст. гр. ПЗПІ-23-1	Ст. викл. катедри ПІ
+Левченко Є.Д. 	Сокорчук І.П.
+
+
+
+
+
+Харків 2025 
+
+     ЛАБОРОТОРНА РОБОТА №2
+     1 ІСТОРІЯ ЗМІН
+     Таблиця 1.1 – Історія змін
+№ДатаВерсія звітуОпис змін та виправлень110.05.20250.1Створено208.06.20250.2Оновлено відповідно до нових чудових вимог     
+     2 ЗАВДАННЯ
+     Необхідно створити консольний застосунок «Продовольчий магазин "Весна"», який працює у середовищі віртуального сервера (VPS). Програма повинна виводити головне меню з переліком доступних дій і очікувати введення команди від користувача. Реалізація має включати наступні функціональні можливості:
+* виведення переліку товарів із зазначенням номера, назви та ціни;
+* можливість вибрати товар за номером і вказати кількість для додавання до кошика;
+* якщо вказано кількість «0», товар видаляється з кошика;
+* якщо вказано неіснуючий номер товару – виводиться повідомлення про помилку;
+* після кожної дії користувач повертається до переліку товарів;
+* можливість повернутися до головного меню;
+* виведення списку товарів у кошику із зазначенням: номера, назви, ціни, кількості та загальної вартості кожного товару;
+* виведення підсумкової суми до сплати;
+* запит імені та віку користувача;
+* ім’я не повинно бути порожнім і має містити хоча б одну літеру;
+* вік повинен бути у межах від 7 до 150 років;
+* завершення роботи застосунку за відповідною командою.
+     Програма повинна перевіряти правильність введених користувачем значень на кожному етапі та реагувати відповідними повідомленнями про помилки у разі некоректного введення.
+     3 ОПИС ВИКОНАНОЇ РОБОТИ
+     Було створено PHP-скрипт, який визначає набір класів та перерахування для імітації функціональності простого консольного додатку для інтернет-магазину.
+     3.1 Моделі Даних
+     Клас StoreItem [див. додаток Б.1, рядки 3-28] представляє товар у магазині. Він реалізує інтерфейс JsonSerializable для перетворення об'єкта в JSON-формат. Клас має приватні властивості: $name (назва), $id (ідентифікатор) та $price (ціна), які ініціалізуються через конструктор. Публічні методи get_name(), get_id() та get_price() надають доступ до цих властивостей. Метод jsonSerialize() повертає масив, що представляє об'єкт товару.
+     Клас CartItem [див. додаток Б.1, рядки 29-51] представляє товар у кошику користувача. Він також реалізує JsonSerializable. Містить приватні властивості $id (ідентифікатор товару) та $amount (кількість), що задаються конструктором. Методи get_id() та get_amount() повертають відповідні значення, а set_amount() дозволяє змінити кількість товару. Метод jsonSerialize() серіалізує об'єкт у JSON.
+     Клас Inventory [див. додаток Б.1, рядки 52-106] управляє списком товарів магазину (StoreItem). Він реалізує JsonSerializable. Конструктор приймає масив товарів та зберігає їх у приватній властивості $items (асоціативний масив, де ключ - ID товару). Клас надає методи для отримання товару за ID (get), отримання всіх товарів (get_all), підрахунку кількості товарів (count), додавання нового товару (add), перевірки наявності товару (exists), оновлення існуючого товару (update) та видалення товару (remove). Метод jsonSerialize() повертає масив товарів.
+     Клас Profile [див. додаток Б.1, рядки 107-130] представляє профіль користувача, маючи опціональні властивості $name (ім'я) та $age (вік), і реалізує JsonSerializable. Конструктор ініціалізує ці властивості. Методи get_name() та get_age() повертають значення властивостей, а update() дозволяє їх змінити. jsonSerialize() серіалізує дані профілю.
+     Клас Cart [див. додаток Б.1, рядки 131-184] управляє кошиком користувача, зберігаючи об'єкти CartItem. Він реалізує JsonSerializable. Конструктор приймає масив товарів кошика. Подібно до Inventory, він має методи get, get_all, count, exists, add, update (оновлює кількість товару) та remove. jsonSerialize() серіалізує вміст кошика.
+     Клас Store [див. додаток Б.1, рядки 185-204] представляє магазин, маючи назву ($name) та інвентар ($inventory типу Inventory). Він реалізує JsonSerializable. Конструктор ініціалізує ці властивості. Методи get_name() та get_inventory() повертають відповідні значення. jsonSerialize() серіалізує дані магазину.
+     Клас User [див. додаток Б.1, рядки 205-224] представляє користувача, маючи кошик ($cart типу Cart) та профіль ($profile типу Profile). Реалізує JsonSerializable. Конструктор ініціалізує ці властивості. Методи get_cart() та get_profile() повертають відповідні об'єкти. jsonSerialize() серіалізує дані користувача.
+     3.2 Обробка Даних та Стани Програми
+     Клас DataHandler [див. додаток Б.1, рядки 225-279] є статичним допоміжним класом (конструктор приватний для запобігання інстанціюванню) для роботи з даними. Він містить статичні методи Workspace_store_data() та Workspace_user_data() для завантаження даних магазину та користувача з JSON-файлів (використовуючи приватний метод Workspace_json()). Метод save_data() зберігає дані у JSON-файл.
+     Перерахування ProgramState [див. додаток Б.1, рядки 280-286] визначає можливі стани програми, такі як головне меню, меню товарів, меню рахунку, меню профілю та завершення роботи.
+     Клас MainMenu [див. додаток Б.1, рядки 287-322] є статичним класом для відображення головного меню. Він містить константи для заголовка, підказки введення, повідомлення про помилку та опцій меню. Статичний метод open() відображає меню, зчитує вибір користувача та повертає відповідний ProgramState. Конструктор приватний.
+     Клас ItemsMenu [див. додаток Б.1, рядки 323-427] є статичним класом для взаємодії з меню вибору товарів. Він містить константи для розділювачів, заголовків колонок, підказок, повідомлень тощо. Статичний метод open() приймає об'єкти Cart та Inventory, відображає список товарів (використовуючи приватний метод print_items()), дозволяє користувачеві вибрати товар, вказати кількість, додати до кошика, оновити або видалити з нього. Також відображає поточний вміст кошика (використовуючи приватний метод print_cart()). Включає приватні методи print_table() та get_column_widths() для форматованого виведення таблиць. Конструктор приватний.
+     Клас BillMenu [див. додаток Б.1, рядки 428-492] є статичним класом для відображення підсумкового рахунку. Він містить константи для повідомлень та заголовків колонок. Статичний метод open() приймає Cart та Inventory, і якщо кошик не порожній, виводить деталізований рахунок (використовуючи приватний метод print_bill()). Також використовує print_table() та get_column_widths() для форматування. Конструктор приватний.
+     Клас ProfileSetupMenu [див. додаток Б.1, рядки 493-528] є статичним класом для налаштування профілю користувача. Він містить константи для підказок введення та повідомлень про помилки валідації. Статичний метод open() приймає об'єкт User та шлях до файлу даних користувача, запитує ім'я та вік (використовуючи приватні методи get_name() та get_age() з валідацією validate_age()), оновлює профіль користувача та зберігає дані. Конструктор приватний.
+     3.3 Головна Логіка Програми
+     Клас Program [див. додаток Б.1, рядки 529-564] містить основну логіку програми у статичному методі main(). Цей метод ініціалізує шляхи до файлів даних, завантажує дані магазину та користувача за допомогою DataHandler. Якщо дані користувача відсутні, створюється новий користувач. Програма входить у цикл, який працює доти, доки стан не зміниться на ProgramState::SHUTDOWN. У кожній ітерації циклу, залежно від поточного стану ($state), викликається відповідний метод open() одного з класів меню (MainMenu, ItemsMenu, BillMenu, ProfileSetupMenu), який повертає новий стан програми.
+     Запуск програми відбувається викликом Program::main() [див. додаток Б.1, рядок 565].
+     4 ВИСНОВОКИ
+     В ході лабораторної роботи було вивчено основи створення консольних застосунків на мові PHP. Було реалізовано програму «Продовольчий магазин "Весна"», що дозволяє взаємодіяти з користувачем через консольне меню. Застосунок забезпечує виведення переліку товарів, додавання їх до кошика, перегляд вмісту кошика та підсумкового рахунку. Також реалізовано функціонал введення та базової перевірки даних користувача, таких як ім'я та вік.
+     Було створено структуровану модель даних за допомогою класів для представлення товарів, кошика, профілю користувача та магазину. Реалізовано механізми обробки даних, включаючи завантаження та збереження інформації. Розроблено логіку управління станами програми та взаємодії з користувачем через різні меню. Програма забезпечує перевірку коректності введених даних та виводить відповідні повідомлення про помилки. Таким чином, було досягнуто поставленої мети щодо ознайомлення з розробкою консольних застосунків на PHP та реалізації базового функціоналу обліку покупок.
+
+
+     ДОДАТОК А
+     Відеозапис
+     
+     Відеозапис презентації результатів лабораторної роботи: https://youtu.be/lcTf-C8LJiE
+     Хронологічний опис відеозапису:
+     00:00 – Молитва
+     01:01 – Демонстрація програми
+     03:05 – Опис моделей
+     06:06 – Опис головного класу та станів програми
+     07:17 – Опис стану головного меню
+     08:10 – Опис стану меню товарів
+     11:03 – Опис стану головного меню
+     11:37 – Опис стану меню профілю
+     12:18 – Пояснення особливості ms_strlen
+     
+     
+     
+
+     ДОДАТОК Б
+     Програмний код
+     Б.1 Головна програма
+     GitHub репозиторій: https://github.com/NureLevchenkoYehor/smp-pzpi-23-1-levchenko-yehor/...
+  1. #!/usr/bin/env php
+  2. <?php
+  3. class StoreItem implements JsonSerializable {
+  4.   private string $name;
+  5.   private int $id;
+  6.   private int $price;
+  7.   public function __construct(string $name, int $id, int $price) {
+  8.     $this->id = $id;
+  9.     $this->price = $price;
+ 10.     $this->name = $name;
+ 11.   }
+ 12.   public function get_name() : string {
+ 13.     return $this->name;
+ 14.   }
+ 15.   public function get_id() : int {
+ 16.     return $this->id;
+ 17.   }
+ 18.   public function get_price() : int {
+ 19.     return $this->price;
+ 20.   }
+ 21.   public function jsonSerialize() : array {
+ 22.     return [
+ 23.       "name" => $this->get_name(),
+ 24.       "id" => $this->get_id(),
+ 25.       "price" => $this->get_price()
+ 26.     ];
+ 27.   }
+ 28. }
+ 29. class CartItem implements JsonSerializable {
+ 30.   private int $id;
+ 31.   private int $amount;
+ 32.   public function __construct(int $id, int $amount) {
+ 33.     $this->id = $id;
+ 34.     $this->amount = $amount;
+ 35.   }
+ 36.   public function get_id() : int {
+ 37.     return $this->id;
+ 38.   }
+ 39.   public function get_amount() : int {
+ 40.     return $this->amount;
+ 41.   }
+ 42.   public function set_amount(int $amount) : void {
+ 43.     $this->amount = $amount;
+ 44.   }
+ 45.   public function jsonSerialize() : array {
+ 46.     return [
+ 47.       "id" => $this->get_id(),
+ 48.       "amount" => $this->get_amount()
+ 49.     ];
+ 50.   }
+ 51. }
+ 52. class Inventory implements JsonSerializable {
+ 53.   private array $items;
+ 54.   public function __construct(array $items = []) {
+ 55.     $this->items = [];
+ 56.     foreach ($items as $item) {
+ 57.       $this->items[$item->get_id()] = $item;
+ 58.     }
+ 59.   }
+ 60.   public function get(int $id) : StoreItem {
+ 61.     if ($this->exists($id) === FALSE) {
+ 62.       echo "Item do not exists.\n";
+ 63.       // TODO: Implement ERROR
+ 64.       return NULL;
+ 65.     }
+ 66.     return $this->items[$id];
+ 67.   }
+ 68.   public function get_all() : array {
+ 69.     return $this->items;
+ 70.   }
+ 71.   public function count() : int {
+ 72.     return count($this->items);
+ 73.   }
+ 74.   public function add(StoreItem $item) : void {
+ 75.     $id = $item->get_id();
+ 76.     if ($this->exists($id) === TRUE) {
+ 77.       echo "Item already exists.\n";
+ 78.       // TODO: Implement ERROR
+ 79.       return;
+ 80.     }
+ 81.     $this->items[$id] = $item;
+ 82.   }
+ 83.   public function exists(int $id) : bool {
+ 84.     return key_exists($id, $this->items);
+ 85.   }
+ 86.   public function update(StoreItem $item) : void {
+ 87.     $id = $item->get_id();
+ 88.     if ($this->exists($id) === FALSE) {
+ 89.       echo "Item do not exists.\n";
+ 90.       // TODO: Implement ERROR
+ 91.       return;
+ 92.     }
+ 93.     $this->items[$id] = $item;
+ 94.   }
+ 95.   public function remove(int $id) : void {
+ 96.     if ($this->exists($id) === FALSE) {
+ 97.       echo "Item do not exists.\n";
+ 98.       // TODO: Implement for acceptable scenario
+ 99.       return;
+100.     }
+101.     unset($this->items[$id]);
+102.   }
+103.   public function jsonSerialize() : array {
+104.     return ["items" => array_values($this->get_all())];
+105.   }
+106. }
+107. class Profile implements JsonSerializable {
+108.   private ?string $name;
+109.   private ?int $age;
+110.   public function __construct(?string $name = NULL, ?int $age = NULL) {
+111.     $this->name = $name;
+112.     $this->age = $age;
+113.   }
+114.   public function get_name() : ?string {
+115.     return $this->name;
+116.   }
+117.   public function get_age() : ?int {
+118.     return $this->age;
+119.   }
+120.   public function update($name, $age) : void {
+121.     $this->name = $name;
+122.     $this->age = $age;
+123.   }
+124.   public function jsonSerialize() : array {
+125.     return [
+126.       "name" => $this->get_name(),
+127.       "age" => $this->get_age()
+128.     ];
+129.   }
+130. }
+131. class Cart implements JsonSerializable {
+132.   private array $items;
+133.   public function __construct(array $items = []) {
+134.     $this->items = [];
+135.     foreach ($items as $item) {
+136.       $this->items[$item->get_id()] = $item;
+137.     }
+138.   }
+139.   public function get(int $id) : StoreItem {
+140.     if ($this->exists($id) === FALSE) {
+141.       echo "Item do not exists.\n";
+142.       // TODO: Implement ERROR
+143.       return NULL;
+144.     }
+145.     return $this->items[$id];
+146.   }
+147.   public function get_all() : array {
+148.     return $this->items;
+149.   }
+150.   public function count() : int {
+151.     return count($this->items);
+152.   }
+153.   public function exists(int $id) : bool {
+154.     return key_exists($id, $this->items);
+155.   }
+156.   public function add(CartItem $item) : void {
+157.     $id = $item->get_id();
+158.     if ($this->exists($id) === TRUE) {
+159.       echo "Item already exists.\n";
+160.       // TODO: Implement ERROR
+161.       return;
+162.     }
+163.     $this->items[$id] = $item;
+164.   }
+165.   public function update(int $id, int $amount) : void {
+166.     if ($this->exists($id) === FALSE) {
+167.       echo "Item do not exists.\n";
+168.       // TODO: Implement ERROR
+169.       return;
+170.     }
+171.     $this->items[$id]->set_amount($amount);
+172.   }
+173.   public function remove(int $id) : void {
+174.     if ($this->exists($id) === FALSE) {
+175.       echo "Item do not exists.\n";
+176.       // TODO: Implement for acceptable scenario
+177.       return;
+178.     }
+179.     unset($this->items[$id]);
+180.   }
+181.   public function jsonSerialize() : array {
+182.     return ["items" => array_values($this->get_all())];
+183.   }
+184. }
+185. class Store implements JsonSerializable {
+186.   private string $name;
+187.   private Inventory $inventory;
+188.   public function __construct(string $name, Inventory $inventory) {
+189.     $this->name = $name;
+190.     $this->inventory = $inventory;
+191.   }
+192.   public function get_name() : string {
+193.     return $this->name;
+194.   }
+195.   public function get_inventory() : Inventory {
+196.     return $this->inventory;
+197.   }
+198.   public function jsonSerialize() : array {
+199.     return [
+200.       "name" => $this->get_name(),
+201.       "inventory" => $this->get_inventory()
+202.     ];
+203.   }
+204. }
+205. class User implements JsonSerializable {
+206.   private Cart $cart;
+207.   private Profile $profile;
+208.   public function __construct(Cart $cart, Profile $profile) {
+209.     $this->cart = $cart;
+210.     $this->profile = $profile;
+211.   }
+212.   public function get_cart() : Cart {
+213.     return $this->cart;
+214.   }
+215.   public function get_profile() : Profile {
+216.     return $this->profile;
+217.   }
+218.   public function jsonSerialize() : array {
+219.     return [
+220.       "cart" => $this->get_cart(),
+221.       "profile" => $this->get_profile()
+222.     ];
+223.   }
+224. }
+225. class DataHandler {
+226.   private function __construct() {
+227.     // Prevent instantiation
+228.   }
+229.   public static function fetch_store_data(string $store_data_filepath) : ?Store {
+230.     $store_data = self::fetch_json($store_data_filepath);
+231.     if ($store_data === NULL) {
+232.       // TODO: Handle error
+233.       return NULL;
+234.     }
+235.     $store_data->items = array_map(
+236.       fn ($o) => new StoreItem($o->name, $o->id, $o->price),
+237.       $store_data->items
+238.     );
+239.     $inventory = new Inventory($store_data->items);
+240.     $store = new Store($store_data->name, $inventory);
+241.     return $store;
+242.   }
+243.   public static function fetch_user_data(string $user_data_filepath, bool $include_cart = false) : ?User {
+244.     $user_data = self::fetch_json($user_data_filepath);
+245.     if ($user_data === NULL) {
+246.       // TODO: Handle error
+247.       return NULL;
+248.     }
+249.     if ($include_cart === TRUE) {
+250.       $user_data->cart->items = array_map(
+251.         fn($o) => new CartItem($o->id, $o->amount),
+252.         $user_data->cart->items
+253.       );
+254.       $cart = new Cart($user_data->cart->items);
+255.     } else {
+256.       $cart = new Cart();
+257.     }
+258.     $profile = new Profile($user_data->profile->name, $user_data->profile->age);
+259.     $user = new User($cart, $profile);
+260.     return $user;
+261.   }
+262.   private static function fetch_json(string $filename) : mixed {
+263.     $file_content = file_get_contents($filename);
+264.     if ($file_content === FALSE) {
+265.       // TODO: Handle error
+266.       return NULL;
+267.     }
+268.     $data = json_decode($file_content);
+269.     if ($data === NULL) {
+270.       // TODO: Handle error
+271.       return NULL;
+272.     }
+273.     return $data;
+274.   }
+275.   public static function save_data(string $filename, mixed $data) : void {
+276.     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+277.     file_put_contents($filename, $json);
+278.   }
+279. }
+280. enum ProgramState {
+281.   case MAIN_MENU;
+282.   case ITEMS_MENU;
+283.   case BILL_MENU;
+284.   case PROFILE_MENU;
+285.   case SHUTDOWN;
+286. }
+287. class MainMenu {
+288.   private const LABEL = '
+289. ################################
+290. # ПРОДОВОЛЬЧИЙ МАГАЗИН "ВЕСНА" #
+291. ################################';
+292.   private const PROMPT = 'Введіть команду: ';
+293.   private const WRONG_COMMAND_ERROR_MESSAGE = 'ПОМИЛКА! Введіть правильну команду';
+294.   private const OPTIONS = [
+295.     1 => 'Вибрати товари',
+296.     2 => 'Отримати підсумковий рахунок',
+297.     3 => 'Налаштувати свій профіль',
+298.     0 => 'Вийти з програми'
+299.   ];
+300.   private function __construct() {
+301.     // Prevent instantiation
+302.   }
+303.   public static function open(bool $show_label = FALSE) : ProgramState {
+304.     if ($show_label === TRUE) {
+305.       echo MainMenu::LABEL;
+306.     }
+307.     foreach (MainMenu::OPTIONS as $num => $option) {
+308.       echo "$num $option\n";
+309.     }
+310.     $choice = (int)readline(MainMenu::PROMPT);
+311.     if ($choice < 0 || $choice > 3) {
+312.       echo MainMenu::WRONG_COMMAND_ERROR_MESSAGE . "\n";
+313.     }
+314.     return match ($choice) {
+315.       1 => ProgramState::ITEMS_MENU,
+316.       2 => ProgramState::BILL_MENU,
+317.       3 => ProgramState::PROFILE_MENU,
+318.       0 => ProgramState::SHUTDOWN,
+319.       default => ProgramState::MAIN_MENU
+320.     };
+321.   }
+322. }
+323. class ItemsMenu {
+324.   private const SEPARATOR = '   -----------';
+325.   private const STORE_ITEMS_COLUMNS = ['№', 'НАЗВА', 'ЦІНА'];
+326.   private const PRODUCT_SELECT_PROMPT = 'Виберіть товар: ';
+327.   private const AMOUNT_SELECT_PROMPT = 'Введіть кількість, штук: ';
+328.   private const SELECTED_LABEL = 'Вибрано: ';
+329.   private const EXIT_OPTION = '0  ПОВЕРНУТИСЯ';
+330.   private const PRODUCT_REMOVAL_MESSAGE = 'ВИДАЛЯЮ ТОВАР З КОШИКА';
+331.   private const CART_EMPTY_MESSAGE = 'КОШИК ПОРОЖНІЙ';
+332.   private const CART_LABEL = 'У КОШИКУ:';
+333.   private const CART_ITEMS_COLUMNS = ['НАЗВА', 'КІЛЬКІСТЬ'];
+334.   private const WRONG_ITEM_NUMBER_ERROR_MESSAGE = 'ПОМИЛКА! Ви вказали неправильний номер товару';
+335.   private const WRONG_AMOUNT_ERROR_MESSAGE = 'ПОМИЛКА! Ви вказали неправильну кількість товару';
+336.   private function __construct() {
+337.     // Prevent instantiation
+338.   }
+339.   public static function open(Cart $cart, Inventory $inventory) : ProgramState {
+340.     self::print_items($inventory);
+341.     echo self::SEPARATOR . "\n" . self::EXIT_OPTION . "\n";
+342.     $choice = (int)readline(self::PRODUCT_SELECT_PROMPT);
+343.     if ($choice < 0 || $choice > $inventory->count()) {
+344.       echo self::WRONG_ITEM_NUMBER_ERROR_MESSAGE . "\n\n";
+345.       return ProgramState::ITEMS_MENU;
+346.     }
+347.     if ($choice === 0) {
+348.       return ProgramState::MAIN_MENU;
+349.     }
+350.     $items = array_values($inventory->get_all());
+351.     // TODO
+352.     $item = $items[$choice - 1];
+353.     echo self::SELECTED_LABEL . $item->get_name() . "\n";
+354.     $amount = (int)readline(self::AMOUNT_SELECT_PROMPT);
+355.     if ($amount < 0) {
+356.       echo self::WRONG_AMOUNT_ERROR_MESSAGE . "\n";
+357.       return ProgramState::ITEMS_MENU;
+358.     }
+359.     $id = $item->get_id();
+360.     $exists = $cart->exists($id) === TRUE;
+361.     if ($amount === 0 && $exists === TRUE) {
+362.       echo self::PRODUCT_REMOVAL_MESSAGE . "\n";
+363.       $cart->remove($id);
+364.     } else if ($exists === TRUE) {
+365.       $cart->update($id, $amount);
+366.     } else {
+367.       $cart->add(new CartItem($id, $amount));
+368.     }
+369.     self::print_cart($cart, $inventory);
+370.     return ProgramState::ITEMS_MENU;
+371.   }
+372.   private static function print_items(Inventory $inventory) : void {
+373.     $rows = [];
+374.     $i = 1;
+375.     foreach ($inventory->get_all() as $item) {
+376.       $row = [$i, $item->get_name(), $item->get_price()];
+377.       array_push($rows, $row);
+378.       $i++;
+379.     }
+380.     self::print_table(array_merge([self::STORE_ITEMS_COLUMNS], $rows));
+381.   }
+382.   private static function print_cart(Cart $cart, Inventory $inventory) : void {
+383.     if ($cart->count() === 0) {
+384.       echo self::CART_EMPTY_MESSAGE . "\n";
+385.     }
+386.     echo self::CART_LABEL . "\n";
+387.     $rows = [];
+388.     foreach ($cart->get_all() as $id => $item) {
+389.       $item_name = $inventory->get($id)->get_name();
+390.       $row = [$item_name, $item->get_amount()];
+391.       array_push($rows, $row);
+392.     }
+393.     self::print_table(array_merge([self::CART_ITEMS_COLUMNS], $rows));
+394.     echo "\n";
+395.   }
+396.   private static function print_table(array $table, string $separator = '  ') : void {
+397.     $column_widths = self::get_column_widths($table);
+398.     $rows_count = count($table);
+399.     $columns_count = count($table[0]);
+400.     foreach ($table as $i => $row) {
+401.       foreach ($row as $j => $field) {
+402.         $column_width = $column_widths[$j];
+403.         $remainder = $column_width - mb_strlen($field);
+404.         echo $field . str_repeat(' ', $remainder);
+405.         if ($j !== $columns_count) {
+406.           echo $separator;
+407.         }
+408.       }
+409.       if ($i !== $rows_count) {
+410.         echo "\n";
+411.       }
+412.     }
+413.   }
+414.   private static function get_column_widths(array $table) : array {
+415.     $column_widths = [];
+416.     foreach ($table as $row) {
+417.       foreach ($row as $i => $value) {
+418.         if (key_exists($i, $column_widths) === FALSE) {
+419.           $column_widths[$i] = mb_strlen($value);
+420.           continue;
+421.         }
+422.         $column_widths[$i] = max(mb_strlen($value), $column_widths[$i]);
+423.       }
+424.     }
+425.     return $column_widths;
+426.   }
+427. }
+428. class BillMenu {
+429.   private const CART_EMPTY_MESSAGE = 'КОШИК ПОРОЖНІЙ';
+430.   private const TOTAL_MESSAGE = 'РАЗОМ ДО CПЛАТИ: ';
+431.   private const COLUMNS = ['№', 'НАЗВА', 'ЦІНА', 'КІЛЬКІСТЬ', 'ВАРТІСТЬ'];
+432.   private function __construct() {
+433.     // Prevent instantiation
+434.   }
+435.   public static function open(Cart $cart, Inventory $inventory) : ProgramState {
+436.     if ($cart->count() === 0) {
+437.       echo self::CART_EMPTY_MESSAGE . "\n\n";
+438.       return ProgramState::MAIN_MENU;
+439.     }
+440.     self::print_bill($cart, $inventory);
+441.     return ProgramState::MAIN_MENU;
+442.   }
+443.   private static function print_bill(Cart $cart, Inventory $inventory) : void {
+444.     $rows = [];
+445.     $total = 0;
+446.     $i = 1;
+447.     foreach ($cart->get_all() as $id => $item) {
+448.       $item_info = $inventory->get($id);
+449.       $price = $item_info->get_price();
+450.       $amount = $item->get_amount();
+451.       $cost = $price * $amount;
+452.       $total += $cost;
+453.       $row = [$i, $item_info->get_name(), $amount, $price, $cost];
+454.       array_push($rows, $row);
+455.       $i++;
+456.     }
+457.     $table = array_merge([self::COLUMNS], $rows);
+458.     self::print_table($table);
+459.     echo self::TOTAL_MESSAGE . $total . "\n\n";
+460.   }
+461.   private static function print_table(array $table , string $separator = '  ') : void {
+462.     $column_widths = self::get_column_widths($table);
+463.     $rows_count = count($table);
+464.     $columns_count = count(self::COLUMNS);
+465.     foreach ($table as $i => $row) {
+466.       foreach ($row as $j => $field) {
+467.         $column_width = $column_widths[$j];
+468.         $remainder = $column_width - mb_strlen($field);
+469.         echo $field . str_repeat(' ', $remainder);
+470.         if ($j !== $columns_count) {
+471.           echo $separator;
+472.         }
+473.       }
+474.       if ($i !== $rows_count) {
+475.         echo "\n";
+476.       }
+477.     }
+478.   }
+479.   private static function get_column_widths(array $table) : array {
+480.     $column_widths = [];
+481.     foreach ($table as $row) {
+482.       foreach ($row as $i => $value) {
+483.         if (key_exists($i, $column_widths) === FALSE) {
+484.           $column_widths[$i] = mb_strlen($value);
+485.           continue;
+486.         }
+487.         $column_widths[$i] = max(mb_strlen($value), $column_widths[$i]);
+488.       }
+489.     }
+490.     return $column_widths;
+491.   }
+492. }
+493. class ProfileSetupMenu {
+494.   private const NAME_PROMPT = 'Ваше імʼя: ';
+495.   private const AGE_PROMPT = 'Ваш вік: ';
+496.   private const AGE_OUT_OF_RANGE_ERROR_MESSAGE = 'ПОМИЛКА! Користувач повинен мати вік від 7 та до 150 років';
+497.   private const AGE_NAN_ERROR_MESSAGE = 'ПОМИЛКА! Вік користувача потрібно вказати числом';
+498.   private function __construct() {
+499.     // Prevent instantiation
+500.   }
+501.   public static function open(User $user, $user_data_filepath) : ProgramState {
+502.     $name = self::get_name();
+503.     $age = self::get_age();
+504.     echo "\n";
+505.     $user->get_profile()->update($name, $age);
+506.     DataHandler::save_data($user_data_filepath, $user);
+507.     return ProgramState::MAIN_MENU;
+508.   }
+509.   private static function get_name() : string {
+510.     while ($name = readline(self::NAME_PROMPT) === '');
+511.     return $name;
+512.   }
+513.   private static function get_age() : int {
+514.     while (self::validate_age($age = readline(self::AGE_PROMPT)) === FALSE);
+515.     return (int)$age;
+516.   }
+517.   private static function validate_age(string $age) : bool {
+518.     if (filter_var($age, FILTER_VALIDATE_INT) === FALSE) {
+519.       echo self::AGE_NAN_ERROR_MESSAGE . "\n\n";
+520.       return FALSE;
+521.     }
+522.     if ($age < 7 || $age > 150) {
+523.       echo self::AGE_OUT_OF_RANGE_ERROR_MESSAGE . "\n\n";
+524.       return FALSE;
+525.     }
+526.     return TRUE;
+527.   }
+528. }
+529. class Program {
+530.   private const WRONG_STATE_ERROR = 228;
+531.   public static function main(string ...$args) : int {
+532.     $store_data_filepath = 'data/store_data.json';
+533.     $store = DataHandler::fetch_store_data($store_data_filepath);
+534.     $user_data_filepath = 'data/user_data.json';
+535.     $user = DataHandler::fetch_user_data($user_data_filepath);
+536.     // Will only work if the error is related to file missing
+537.     if ($user === NULL) {
+538.       $user = new User(new Cart(), new Profile());
+539.       DataHandler::save_data($user_data_filepath, $user);
+540.     }
+541.     // Do things
+542.     $state = ProgramState::MAIN_MENU;
+543.     while ($state !== ProgramState::SHUTDOWN) {
+544.       switch ($state) {
+545.         case ProgramState::MAIN_MENU:
+546.           $state = MainMenu::open();
+547.           break;
+548.         case ProgramState::ITEMS_MENU:
+549.           $state = ItemsMenu::open($user->get_cart(), $store->get_inventory());
+550.           break;
+551.         case ProgramState::BILL_MENU:
+552.           $state = BillMenu::open($user->get_cart(), $store->get_inventory());
+553.           break;
+554.         case ProgramState::PROFILE_MENU:
+555.           $state = ProfileSetupMenu::open($user, $user_data_filepath);
+556.           break;
+557.         default:
+558.           // TODO: Handle Error
+559.           return self::WRONG_STATE_ERROR;
+560.       }
+561.     }
+562.     return 0;
+563.   }
+564. }
+565. Program::main();
+     2
+     
+     
