@@ -1,0 +1,762 @@
+﻿МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
+
+
+Катедра Програмної інженерії
+
+
+
+
+
+
+ЗВІТ
+З ЛАБОРАТОРНОЇ РОБОТИ №3
+з дисципліни «Скриптові мови програмування»
+з теми «Створення web-застосунків за допомогою PHP»
+
+
+
+
+
+Виконав:	Перевірив:
+ст. гр. ПЗПІ-23-1	Ст. викл. катедри ПІ
+Левченко Є.Д. 	Сокорчук І.П.
+
+
+
+
+
+Харків 2025 
+
+     СТВОРЕННЯ WEB-ЗАСТОСУНКІВ ЗА ДОПОМОГОЮ PHP
+     1 ІСТОРІЯ ЗМІН
+     Таблиця 1.1 – Історія змін
+№ДатаВерсія звітуОпис змін та виправлень108.06.20250.1Створено     
+     2 МЕТА РОБОТИ
+     Отримати базові знання з розробки сайтів.
+     3 ЗАВДАННЯ
+     Результатом лабораторної роботи має бути робочий сайт з інтернет магазином. Він має складатися з таких розділів, як:
+* сторінка товарів;
+* сторінка «Кошик».
+     Кожна сторінка має складатися з таких частин, як:
+* «Шапка» сторінки;
+* тіло сторінки;
+* «Підвал» або Footer сторінки.
+     На сторінці товарів необхідно відобразити список доступних для покупки найменувань з можливістю вибрати кількість одиниць товарів і кнопкою «купити».
+     Під час натискання на кнопку «купити», має відправлятися запит (відправка форми, методом POST) на сервер, де дані зберігаються в сесію.
+     На сторінці «Кошик» необхідно відобразити список обраних користувачем товарів (які були збережені у сесію).
+     Якщо ви ще не обрали жодного товару, то має бути відображений напис «Перейти до покупок» (посилання).
+     4 ОПИС ВИКОНАНОЇ РОБОТИ
+     Кожна сторінка сайту має "Шапку" та "Підвал", які включаються у сторінки за допомогою ключового слова required. "Шапка" сайту містить набір елементів навігації, підключає стилі сторінки та відкриває основне наповнення сайту [див. додаток Б.2]. "Підвал" сайту також містить набір елементів для навігації та закриває основне наповнення сайту [див. додаток Б.1]. Відповідно, "Шапка" підключається з початку сторінок, тоді як "Підвал" має підключатися в самому кінці.
+     Для переходів, замість прямих посилань на відповідні файли, використовуються посилання на відповідні контролери, які оброблятимуться обробником запитів.
+     Обробник запитів відповідає за маршрутизацію вхідних HTTP-запитів, ініціалізацію сесії та встановлення з’єднання з базою даних. Спочатку перевіряється, чи скрипт запущений локальним PHP-сервером, і, якщо відповідний файл існує, його обробка передається серверу [див. додаток Б.3, рядки 12–17]. Далі визначаються константи для підключення до бази даних та маршрути сторінок, які обслуговуються відповідними контролерами [див. додаток Б.3, рядки 18–26]. Якщо сесія ще не активна, вона запускається, і в ній ініціалізуються змінні cart, user, а також guest, якщо користувач не авторизований [див. додаток Б.3, рядки 27–41]. Після цього встановлюється підключення до бази даних з налаштованими параметрами обробки помилок і режимом вибірки [див. додаток Б.3, рядки 42–50]. Також виконується перевірка: якщо збережений ідентифікатор користувача більше не існує в базі, то користувач вважається неавторизованим [див. додаток Б.3, рядки 51–60]. Далі аналізується шлях запиту, на його основі визначається контролер та дія, яку потрібно викликати [див. додаток Б.3, рядки 61–67]. Якщо контролер не знайдено або не існує відповідний файл чи функція, повертається код помилки 404 [див. додаток Б.3, рядки 68–83]. У кінці обробник викликає функцію відповідної дії, передаючи їй параметри з GET або POST запиту [див. додаток Б.3, рядки 84–86].
+     Головна сторінка сайту реалізована за допомогою контролера, який обробляє запити за маршрутом /products, отримує всі товари з бази даних та передає їх до представлення для виводу [див. додаток Б.4]. Запит до бази даних виконується через SQL-інструкцію, що об'єднує таблиці товарів, валют і зображень [див. додаток Б.4, рядки 2–12]. Основна функція index отримує дані за допомогою функції get_products та підключає шаблон сторінки products.php для відображення [див. додаток Б.4, рядки 21–25]. У представленні сторінки виводиться форма, яка дозволяє користувачеві додати декілька товарів до кошика. У кожному блоці товару відображається зображення, назва, ціна та поле для введення кількості, при цьому значення полів передаються приховано для подальшої обробки [див. додаток Б.5, рядки 2–25]. Шапка та підвал сторінки підключаються через require, що забезпечує єдину структуру для всіх сторінок сайту [див. додаток Б.5, рядки 1 і 26].
+     Контролер сторінки «Кошик» включає в себе логіку для керування вмістом кошика та створення замовлень. Він містить функцію create_order, яка відповідає за створення нового замовлення в базі даних [див. додаток Б.6, рядки 14-87]. Ця функція виконує валідацію даних замовлення та елементів замовлення, перевіряє наявність користувача, а потім вставляє дані замовлення та його елементи в базу даних за допомогою транзакцій для забезпечення цілісності даних [див. додаток Б.6, рядки 48-85].
+     Крім того, контролер визначає функції для обробки різних HTTP-запитів, пов'язаних з кошиком. Функція index отримує та нормалізує дані кошика з сесії, обчислює загальну суму та відтворює сторінку кошика [див. додаток Б.6, рядки 89-110]. Функція remove видаляє товар з кошика на основі переданого ідентифікатора товару [див. додаток Б.6, рядки 113-132]. Функція add_batch дозволяє додавати або оновлювати кілька товарів у кошику одночасно, виконуючи валідацію вхідних даних та оновлення або додавання товарів до сесії кошика [див. додаток Б.6, рядки 135-195]. Функція clear очищає весь кошик у сесії [див. додаток Б.6, рядки 198-204]. Нарешті, функція create створює замовлення з поточного вмісту кошика, використовуючи функцію create_order, і очищає кошик після успішного створення замовлення [див. додаток Б.6, рядки 207-244].
+     Сторінка «Кошик» є сторінкою для відображення вмісту кошика користувача. Вона починається з підключення файлу header.php та закінчується підключенням footer.php, що забезпечує єдину структуру для всіх сторінок сайту [див. додаток Б.7, рядки 1, 53]. Якщо кошик порожній, сторінка пропонує посилання для переходу до покупок [див. додаток Б.7, рядки 3-4]. В іншому випадку, вона відображає таблицю з деталями товарів у кошику, включаючи ID, назву, кількість, ціну та суму для кожного товару [див. додаток Б.7, рядки 6-43]. Для кожного товару передбачена кнопка для його видалення з кошика, яка використовує форму з методом POST, що відправляє запит до контролера /cart/remove [див. додаток Б.7, рядки 26-33]. Внизу таблиці відображається загальна сума всіх товарів у кошику [див. додаток Б.7, рядки 37-41]. Також присутні дві кнопки: "Cancel", яка очищає кошик, відправляючи запит до /cart/clear, і "Pay", яка створює замовлення, відправляючи запит до /cart/create [див. додаток Б.7, рядки 44-51].
+     Довідкова сторінка, складається з «Шапки» та «Підвалу» сайту, заголовку із гумористною фразою та коротким описом автора [див. додаток Б.8, рядки 2–3]. Основну частину сторінки займає ASCII-арт, стилізований блок, що містить велику текстову графіку, оформлену через тег <pre> з додатковим зменшенням шрифту для кращого візуального ефекту [див. додаток Б.8, рядки 4–40]. Додавання даного блоку немає жодного сенсу, окрім підтримання ментального стану студента під час виконання даної лабораторної роботи.
+     Скрипт для ініціалізації бази даних створює необхідну структуру таблиць для функціонування веб-магазину та заповнює їх початковими даними. Спочатку створюється таблиця Currencies для зберігання інформації про валюти, включаючи їхні коди, назви та символи [див. додаток Б.9, рядки 2-7]. Ця таблиця також попередньо заповнюється даними про різні світові валюти, такі як українська гривня, долар США, євро тощо [див. додаток Б.9, рядки 9-21]. Далі створюється таблиця Images, яка призначена для зберігання URL-адрес та назв зображень товарів, з унікальним обмеженням на URL [див. додаток Б.9, рядки 23-29]. Ця таблиця також ініціалізується шляхами до зображень товарів, що зберігаються локально [див. додаток Б.9, рядки 33-41].
+     Наступним кроком є створення таблиці Products, яка містить інформацію про товари, такі як назва, ціна, код валюти та ідентифікатор зображення. Вона має зовнішні ключі, що посилаються на таблиці Currencies та Images, забезпечуючи цілісність даних [див. додаток Б.9, рядки 42-51]. Таблиця Products також заповнюється початковими даними про доступні товари в магазині [див. додаток Б.9, рядки 53-61]. Для управління користувачами створюються дві таблиці: UserIdentities для зберігання облікових даних зареєстрованих користувачів (email та хеш паролю) [див. додаток Б.9, рядки 63-67] та CustomerProfiles для зберігання профільної інформації клієнтів (ім'я, прізвище, вік) [див. додаток Б.9, рядки 69-74].
+     Насамкінець, для керування замовленнями створюються таблиці Orders та OrderItems. Таблиця Orders зберігає інформацію про замовлення, включаючи ідентифікатори клієнтів (як зареєстрованих, так і гостей), з можливістю посилання на UserIdentities [див. додаток Б.9, рядки 76-81]. Таблиця OrderItems деталізує кожен товар у замовленні, включаючи ідентифікатор товару, кількість та посилання на відповідне замовлення та товар. Вона має зовнішні ключі, що посилаються на таблиці Products та Orders, з каскадним видаленням, що гарантує видалення елементів замовлення при видаленні пов'язаного товару або замовлення [див. додаток Б.9, рядки 82-91].
+     Скрипт для де-ініціалізації бази даних є допоміжним інструментом для очищення бази даних. Він видаляє всі створені таблиці у зворотному порядку їх залежностей, щоб уникнути помилок через порушення зовнішніх ключів. Спочатку видаляються таблиці OrderItems та Orders, потім CustomerProfiles, UserIdentities, Products, Images і, нарешті, Currencies [див. додаток Б.10]. Це забезпечує повне очищення структури бази даних, що корисно для розробки або переініціалізації системи.
+     Скрипт для чистого створення бази даних є bash-скриптом, призначеним для ініціалізації бази даних SQLite для застосунку. Цей скрипт автоматизує процес видалення старої бази даних, створення нового файлу бази даних та виконання SQL-скрипту для створення схеми бази даних [див. додаток Б.11].
+     На початку скрипт визначає ім'я файлу бази даних (data.sqlite) та ім'я SQL-скрипту для створення схеми (create.sql) [див. додаток Б.11, рядки 6-7]. Потім він перевіряє, чи існує файл бази даних. Якщо так, то він видаляє його [див. додаток Б.11, рядки 8-11]. Після цього створюється новий порожній файл бази даних [див. додаток Б.11, рядки 12-13]. Скрипт також містить перевірки, щоб переконатися, що файл бази даних був успішно створений та що SQL-скрипт для створення схеми існує [див. додаток Б.11, рядки 14-21]. Нарешті, скрипт виконує SQL-інструкції з файлу create.sql у новоствореній базі даних за допомогою команди sqlite3 [див. додаток Б.11, рядок 23]. Після успішного виконання виводиться повідомлення про завершення налаштування бази даних [див. додаток Б.11, рядки 24-25].
+     Також, окрім цього, було створено ще один допоміжний скрипт, який використовується для спрощення запуску сервера, наведений нижче.
+1. #!/bin/bash
+2. # This script is used to run the PHP built-in server for the application.
+3. php -S localhost:8080 index.php
+     4 ВИСНОВОКИ
+     В результаті виконання лабораторної роботи було створено web-магазин із використанням скриптової мови програмування PHP, отримано базові навички з розробки web-сайтів та роботи з SQLite.
+
+
+     ДОДАТОК А
+     Відеозапис
+     
+     Відеозапис презентації результатів лабораторної роботи: https://youtu.be/-qIoTFbef3w
+     Хронологічний опис відеозапису:
+     00:00 – Молитва
+     01:01 – Опис вхідної точки обробника запитів
+     05:22 – Опис контролера та сторінки продуктів
+     07:00 – Опис контролера та сторінки кошика
+     12:34 – Опис реалізації бази даних
+     14:03 – Загальний огляд сторінок та вставних елементів сторінок
+     14:43 – Запуск серверу
+     15:30 – Демонстрація роботи
+     
+     
+
+     ДОДАТОК Б
+     Програмний код
+     GitHub репозиторій: https://github.com/NureLevchenkoYehor/smp-pzpi-23-1-levchenko-yehor/...
+     Б.1 «Шапка» сайту
+ 1.   </main>
+ 2.   <footer class="footer">
+ 3.     <nav class="nav-links">
+ 4.       <a href="/home" class="nav-item">Home</a>
+ 5.       <a href="/products" class="nav-item">Products</a>
+ 6.       <a href="/cart" class="nav-item">Cart</a>
+ 7.       <a href="/about.php" class="nav-item">About Us</a>
+ 8.     </nav>
+ 9.   </footer>
+10. </body>
+11. </html>
+     Б.2 «Підвал» сайту
+ 1. <html lang="en">
+ 2. <head>
+ 3.   <meta charset="UTF-8">
+ 4.   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 5.   <title>Web-магазин</title>
+ 6.   <link rel="stylesheet" href="/assets/styles.css">
+ 7. </head>
+ 8. <body>
+ 9.   <header class="header">
+10.     <nav class="nav-links">
+11.       <a href="/home" class="nav-item">
+12.         <div class="icon-container">
+13.           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+14.             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+15.             <polyline points="9 22 9 13 15 13 15 22"></polyline>
+16.           </svg>
+17.         </div>
+18.         <span>Home</span>
+19.       </a>
+20.       <a href="/products" class="nav-item">
+21.         <div class="icon-container">
+22.           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+23.             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6z"/>
+24.             <path d="M3 6h18"/>
+25.             <path d="M16 10a4 4 0 01-8 0"/>
+26.           </svg>
+27.         </div>
+28.         <span>Products</span>
+29.       </a>
+30.       <a href="/cart" class="nav-item">
+31.         <div class="icon-container">
+32.           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+33.             <circle cx="9" cy="21" r="1"></circle>
+34.             <circle cx="20" cy="21" r="1"></circle>
+35.             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+36.           </svg>
+37.         </div>
+38.         <span>Cart</span>
+39.       </a>
+40.     </nav>
+41.   </header>
+42.   <main>
+     Б.3 Обробник запитів
+1. <?php
+ 2. // Helper function
+ 3. // function array_find(array $array, callable $callback): mixed {
+ 4. //     foreach ($array as $key => $value) {
+ 5. //         if ($callback($value, $key)) {
+ 6. //             return $value;
+ 7. //         }
+ 8. //     }
+ 9. //     return null;
+10. // }
+11. // Handle files for PHP server
+12. if (php_sapi_name() === 'cli-server') {
+13.   $path = __DIR__ .  parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+14.   if (is_file($path)) {
+15.     return false;
+16.   }
+17. }
+18. // Define constants
+19. const DATABASE_DSN = 'sqlite:' . __DIR__ . '/database/data.sqlite';
+20. const DEFAULT_CONTROLLER = 'products-controller';
+21. const ROUTES = [
+22.   '/' => DEFAULT_CONTROLLER,
+23.   '/home' => DEFAULT_CONTROLLER,
+24.   '/products' => DEFAULT_CONTROLLER,
+25.   '/cart' => 'cart-controller',
+26. ];
+27. // Start session if not started
+28. if (session_status() === PHP_SESSION_NONE) {
+29.   session_start();
+30. }
+31. // Init session variables if not set
+32. if (!isset($_SESSION['cart'])) {
+33.   $_SESSION['cart'] = [];
+34. }
+35. if (!isset($_SESSION['user'])) {
+36.   $_SESSION['user'] = [ 'id' => null ];
+37. }
+38. if (!isset($_SESSION['user']['id']) && !isset($_SESSION['guest'])) {
+39.   $guest_id = bin2hex(random_bytes(16));
+40.   $_SESSION['guest'] = [ 'id' => $guest_id ];
+41. }
+42. // Get PDO instance
+43. try {
+44.   $pdo = new PDO(DATABASE_DSN);
+45.   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+46.   $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+47. } catch (\Throwable $th) {
+48.   http_response_code(500);
+49.   throw $th;
+50. }
+51. // Reset user id if user was deleted
+52. if (isset($_SESSION['user']['id'])) {
+53.   $user_id = $_SESSION['user']['id'];
+54.   $stmt = $pdo->prepare('SELECT id FROM UserIdentities WHERE user_identity_id = :id');
+55.   $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+56.   $stmt->execute();
+57.   if ($stmt->rowCount() === 0) {
+58.     $_SESSION['user'] = [ 'id' => null ];
+59.   }
+60. }
+61. // Get request method and path
+62. $request_method = $_SERVER['REQUEST_METHOD'];
+63. $request_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+64. // Get controller and action
+65. $segments = explode('/', trim($request_path, '/'));
+66. $controller = ROUTES["/$segments[0]"];
+67. $action = $segments[1] ?? 'index';
+68. if ($controller === null) {
+69.   http_response_code(404);
+70. }
+71. // Get controller file path
+72. $controller_file = __DIR__ . "/$controller.php";
+73. if (!file_exists($controller_file)) {
+74.   http_response_code(404);
+75.   exit;
+76. }
+77. // Get controller and action
+78. require $controller_file;
+79. // Check if action exists
+80. if (!function_exists($action)) {
+81.   http_response_code(404);
+82.   exit;
+83. }
+84. // Call action with parameters
+85. $params = $request_method === 'POST' ? $_POST : $_GET;
+86. $action($params);
+87. exit;
+     Б.4 Контролер головної сторінки
+ 1. <?php
+ 2. const SQL_GET_ALL = '
+ 3. SELECT
+ 4.   p.[product_id],
+ 5.   p.[product_name],
+ 6.   p.[product_price],
+ 7.   c.[currency_symbol],
+ 8.   pi.[image_url],
+ 9.   pi.[image_name]
+10. FROM [Products] as p
+11. JOIN [Images] as pi ON p.[image_id] = pi.[image_id]
+12. JOIN [Currencies] as c ON p.[currency_code] = c.[currency_code];';
+13. // Get products from data source
+14. function get_products(PDO $pdo) {
+15.     $pst = $pdo->query(SQL_GET_ALL);
+16.     $products = $pst->fetchAll();
+17.     return $products;
+18. }
+19. // GET /products
+20. // Gets products from data source and render view
+21. function index() {
+22.     global $pdo;
+23.     $products = get_products($pdo);
+24.     require './products.php';
+25.     exit;
+26. }
+     Б.5 Головна сторінка
+ 1. <?php require 'header.php' ?>
+ 2. <form action="/cart/add_batch" method="post" class="product-list">
+ 3.   <?php
+ 4.   /** @var array $products */
+ 5.   ?>
+ 6.   <?php foreach ($products as $i => $product):
+ 7.     $id = htmlspecialchars($product->product_id);
+ 8.     $name = htmlspecialchars($product->product_name);
+ 9.     $price = htmlspecialchars($product->product_price);
+10.     $currency_symbol = htmlspecialchars($product->currency_symbol);
+11.     $image_url = htmlspecialchars($product->image_url);
+12.     $image_name = htmlspecialchars($product->image_name);
+13.     ?>
+14.     <div class="product-item">
+15.       <input type="hidden" name="products[<?= $i ?>][id]" value="<?= $id ?>">
+16.       <input type="hidden" name="products[<?= $i ?>][name]" value="<?= $name ?>">
+17.       <input type="hidden" name="products[<?= $i ?>][price]" value="<?= $price ?>">
+18.       <img src="<?= $image_url ?>" alt="<?= $image_name ?>">
+19.       <p class="product-label"><?= $name ?></p>
+20.       <input class="quantity-input" type="number" min="0" max="99" name="products[<?= $i ?>][quantity]" value="0">
+21.       <p class="product-price"><?= "{$price}{$currency_symbol}" ?></p>
+22.     </div>
+23.   <?php endforeach; ?></div>
+24.   <button class="submit-button" type="submit">Send</button>
+25. </form>
+26. <?php require 'footer.php' ?>
+     Б.6 Контролер сторінки «Кошик»
+  1. <?php
+  2. const SQL_CREATE_ORDER = '
+  3. INSERT INTO [Orders] ([customer_id], [guest_id])
+  4. VALUES (:customer_id, :guest_id);';
+  5. const SQL_FIND_USER = '
+  6. SELECT COUNT(*)
+  7. FROM UserIdentities
+  8. WHERE user_identity_id = :id';
+  9. const SQL_BULK_INSERT_ORDER_ITEMS_BASE = '
+ 10. INSERT INTO [OrderItems] ([order_id], [product_id], [order_item_quantity])
+ 11. VALUES ';
+ 12. const SQL_BULK_INSERT_ORDER_ITEMS_ITEM = '(:oi{0}, :pi{0}, :q{0})';
+ 13. // Function that plays a role of a repository function
+ 14. function create_order(PDO $pdo, array $order_data) {
+ 15.   // Validate order data
+ 16.   if (empty($order_data)) {
+ 17.     throw new InvalidArgumentException('Order data is empty');
+ 18.   }
+ 19.   if (!isset($order_data['user_id']) && !isset($order_data['guest_id'])) {
+ 20.     throw new InvalidArgumentException('Order data is missing user or guest id');
+ 21.   }
+ 22.   if (!isset($order_data['order_items']) || empty($order_data['order_items'])) {
+ 23.     throw new InvalidArgumentException('Order data is missing order items');
+ 24.   }
+ 25.   // Check if user id is valid
+ 26.   if (isset($order_data['user_id'])) {
+ 27.     $stmt = $pdo->prepare(SQL_FIND_USER);
+ 28.     $stmt->bindParam(':id', $order_data['user_id']);
+ 29.     $stmt->execute();
+ 30.     if ($stmt->fetchColumn() == 0) {
+ 31.       throw new InvalidArgumentException('User id is invalid');
+ 32.     }
+ 33.   }
+ 34.   $items = $order_data['order_items'];
+ 35.   // Validate order items
+ 36.   foreach ($items as $item) {
+ 37.     if (!isset($item['product_id']) || !isset($item['quantity'])) {
+ 38.       throw new InvalidArgumentException('Order item is missing product id or quantity');
+ 39.     }
+ 40.     if (!is_numeric($item['product_id']) || !is_numeric($item['quantity'])) {
+ 41.       throw new InvalidArgumentException('Order item product id or quantity is not a number');
+ 42.     }
+ 43.     if ($item['quantity'] <= 0) {
+ 44.       throw new InvalidArgumentException('Order item quantity must be greater than 0');
+ 45.     }
+ 46.   }
+ 47.   // Order creation has 2 stages: order creation and order items creation
+ 48.   $pdo->beginTransaction();
+ 49.   // 1. Create order
+ 50.   $stmt = $pdo->prepare(SQL_CREATE_ORDER);
+ 51.   $stmt->bindParam(':customer_id', $order_data['user_id']);
+ 52.   $stmt->bindParam(':guest_id', $order_data['guest_id']);
+ 53.   $stmt->execute();
+ 54.   $order_id = $pdo->lastInsertId();
+ 55.   // Check if order was created
+ 56.   if ($order_id === false) {
+ 57.     $pdo->rollBack();
+ 58.     throw new RuntimeException('Failed to create order');
+ 59.   }
+ 60.   // 2. Create order items
+ 61.   // Prepare bulk insert statement
+ 62.   $sql = SQL_BULK_INSERT_ORDER_ITEMS_BASE;
+ 63.   foreach ($items as $index => $item) {
+ 64.     $sql .= str_replace('{0}', $index, SQL_BULK_INSERT_ORDER_ITEMS_ITEM);
+ 65.     if ($index < count($items) - 1) {
+ 66.       $sql .= ',';
+ 67.     }
+ 68.   }
+ 69.   $sql .= ';';
+ 70.   $stmt = $pdo->prepare($sql);
+ 71.   // Bind parameters
+ 72.   foreach ($items as $index => $item) {
+ 73.     $stmt->bindParam(":oi$index", $order_id, PDO::PARAM_INT);
+ 74.     $stmt->bindParam(":pi$index", $item['product_id'], PDO::PARAM_INT);
+ 75.     $stmt->bindParam(":q$index", $item['quantity'], PDO::PARAM_INT);
+ 76.   }
+ 77.   // Insert order items into database
+ 78.   $stmt->execute();
+ 79.   // Check if order items were created
+ 80.   if ($stmt->rowCount() != count($items)) {
+ 81.     $pdo->rollBack();
+ 82.     throw new RuntimeException('Failed to create order items');
+ 83.   }
+ 84.   // Commit transaction
+ 85.   $pdo->commit();
+ 86.   return $order_id;
+ 87. }
+ 88. // GET /cart
+ 89. function index() {
+ 90.   // Check if cart is empty
+ 91.   $cart_empty = empty($_SESSION['cart']);
+ 92.   // Get cart items
+ 93.   $cart_items = $_SESSION['cart'] ?? [];
+ 94.   // Calculate total price
+ 95.   $total_sum = 0;
+ 96.   foreach ($cart_items as $item) {
+ 97.     $total_sum += $item['total'];
+ 98.   }
+ 99.   // Normalize cart items
+100.   foreach ($cart_items as $key => $item) {
+101.     $cart_items[$key]['id'] = htmlspecialchars($item['id']);
+102.     $cart_items[$key]['name'] = htmlspecialchars($item['name']);
+103.     $cart_items[$key]['quantity'] = htmlspecialchars($item['quantity']);
+104.     $cart_items[$key]['price'] = htmlspecialchars($item['price']);
+105.     $cart_items[$key]['total'] = htmlspecialchars($item['total']);
+106.   }
+107.   // Render cart view
+108.   require './cart.php';
+109.   exit;
+110. }
+111. // POST /cart/remove
+112. // Removes a product from the session's cart
+113. function remove(array $params) {
+114.   // Get product id from params
+115.   $product_id = $params['id'] ?? null;
+116.   if ($product_id === null) {
+117.     http_response_code(400);
+118.     echo json_encode(['error' => 'Product id is required']);
+119.     exit;
+120.   }
+121.   // Validate product id
+122.   if (!is_numeric($product_id)) {
+123.     http_response_code(400);
+124.     echo json_encode(['error' => 'Invalid product id', 'data' => "Expected number, got " . var_dump($product_id)]);
+125.     exit;
+126.   }
+127.   // Remove product from cart
+128.   unset($_SESSION['cart'][$product_id]);
+129.   // Redirect to cart view
+130.   header('Location: /cart');
+131.   exit;
+132. }
+133. // POST /cart/add_batch
+134. // Adds multiple products to the session's cart
+135. function add_batch(array $params) {
+136.   // Validate params
+137.   if (!isset($params['products']) || !is_array($params['products'])) {
+138.     http_response_code(400);
+139.     echo json_encode(['error' => 'Invalid products data']);
+140.     exit;
+141.   }
+142.   $products = $params['products'];
+143.   foreach ($products as $product) {
+144.     // Validate product data
+145.     if (!isset($product['id'], $product['quantity'], $product['name'], $product['price'])) {
+146.       http_response_code(400);
+147.       echo json_encode(['error' => 'Invalid product data: missing fields', 'data' => [
+148.         'id' => var_dump($product['id']),
+149.         'quantity' => var_dump($product['quantity']),
+150.         'name' => var_dump($product['name']),
+151.         'price' => var_dump($product['price'])
+152.       ]]);
+153.       exit;
+154.     }
+155.     if (!is_numeric($product['id']) || !is_numeric($product['quantity']) || !is_numeric($product['price'])) {
+156.       http_response_code(400);
+157.       echo json_encode(['error' => 'Invalid product data: invalid data types', 'data' => [
+158.         'id' => "Expected number, got " . var_dump($product['id']),
+159.         'quantity' => "Expected number, got " . var_dump($product['quantity']),
+160.         'price' => "Expected number, got " . var_dump($product['price'])
+161.       ]]);
+162.       exit;
+163.     }
+164.     if ($product['quantity'] < 0) {
+165.       http_response_code(400);
+166.       echo json_encode(['error' => 'Invalid product data: negative quantity']);
+167.       exit;
+168.     }
+169.     // Update existing product in cart or add new one
+170.     $existing_product = array_find($_SESSION['cart'], fn($item) => $item['id'] == $product['id']);
+171.     if (isset($existing_product)) {
+172.       $existing_product['quantity'] += $product['quantity'];
+173.       $existing_product['total'] = $existing_product['quantity'] * $existing_product['price'];
+174.       if ($existing_product['quantity'] == 0) {
+175.         unset($_SESSION['cart'][$existing_product['id']]);
+176.       } else {
+177.         $_SESSION['cart'][$existing_product['id']] = $existing_product;
+178.       }
+179.     } else {
+180.       if ($product['quantity'] == 0) {
+181.         continue;
+182.       }
+183.       $_SESSION['cart'][$product['id']] = [
+184.         'id' => $product['id'],
+185.         'name' => $product['name'],
+186.         'quantity' => $product['quantity'],
+187.         'price' => $product['price'],
+188.         'total' => $product['quantity'] * $product['price']
+189.       ];
+190.     }
+191.   }
+192.   // Redirect to cart view
+193.   header('Location: /cart');
+194.   exit;
+195. }
+196. // POST /cart/clear
+197. // Clears the session's cart
+198. function clear() {
+199.   // Clear cart
+200.   unset($_SESSION['cart']);
+201.   // Redirect to cart view
+202.   header('Location: /cart');
+203.   exit;
+204. }
+205. // POST /cart/create
+206. // Creates an order from the session's cart
+207. function create() {
+208.   // Validate cart
+209.   if (!isset($_SESSION['cart'])) {
+210.     http_response_code(400);
+211.     echo json_encode(['error' => 'No cart found']);
+212.     exit;
+213.   }
+214.   if (empty($_SESSION['cart'])) {
+215.     http_response_code(400);
+216.     echo json_encode(['error' => 'Cart is empty']);
+217.     exit;
+218.   }
+219.   // Prepare order data
+220.   $cart = $_SESSION['cart'];
+221.   $order_data = [
+222.     'user_id' => $_SESSION['user']['id'] ?? null,
+223.     'guest_id' => $_SESSION['guest']['id'] ?? null
+224.   ];
+225.   foreach ($cart as $item) {
+226.     $order_data['order_items'][] = [
+227.       'product_id' => $item['id'],
+228.       'quantity' => $item['quantity']
+229.     ];
+230.   }
+231.   global $pdo;
+232.   try {
+233.     create_order($pdo, $order_data);
+234.     // Clear cart
+235.     unset($_SESSION['cart']);
+236.     // Redirect to cart view
+237.     header('Location: /cart');
+238.   } catch (\Throwable $e) {
+239.     http_response_code(500);
+240.     echo json_encode(['error' => 'Failed to create order', 'message' => $e->getMessage()]);
+241.     echo "<p>" . var_dump($order_data) . "</p>";
+242.   }
+243.   exit;
+244. }
+     Б.7 Сторінка «Кошик»
+1. <?php require './header.php';?>
+ 2. <h1>CART!</h1>
+ 3. <?php if ($cart_empty): ?>
+ 4.   <a href="/home">Перейти к покупкам</a>
+ 5. <?php else: ?>
+ 6.   <table class="table">
+ 7.     <thead>
+ 8.       <tr>
+ 9.         <th>ID</th>
+10.         <th>Name</th>
+11.         <th>Count</th>
+12.         <th>Price</th>
+13.         <th>Sum</th>
+14.         <th></th>
+15.       </tr>
+16.     </thead>
+17.     <tbody>
+18.       <?php foreach ($cart_items as $item): ?>
+19.         <tr>
+20.           <td><?= $item['id'] ?></td>
+21.           <td><?= $item['name'] ?></td>
+22.           <td><?= $item['quantity'] ?></td>
+23.           <td><?= $item['price'] ?></td>
+24.           <td><?= $item['total'] ?></td>
+25.           <td>
+26.             <form method="post" action="/cart/remove">
+27.               <input type="hidden" name="id" value="<?= $item['id'] ?>">
+28.               <button type="submit" style="background: none; border: none; cursor: pointer;">
+29.                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 457.503 457.503">
+30.                   <path d="M381.575,57.067h-90.231C288.404,25.111,261.461,0,228.752,0C196.043,0,169.1,25.111,166.16,57.067H75.929    c-26.667,0-48.362,21.695-48.362,48.362c0,26.018,20.655,47.292,46.427,48.313v246.694c0,31.467,25.6,57.067,57.067,57.067    h195.381c31.467,0,57.067-25.6,57.067-57.067V153.741c25.772-1.02,46.427-22.294,46.427-48.313    C429.936,78.761,408.242,57.067,381.575,57.067z M165.841,376.817c0,8.013-6.496,14.509-14.508,14.509    c-8.013,0-14.508-6.496-14.508-14.509V186.113c0-8.013,6.496-14.508,14.508-14.508c8.013,0,14.508,6.496,14.508,14.508V376.817z     M243.26,376.817c0,8.013-6.496,14.509-14.508,14.509c-8.013,0-14.508-6.496-14.508-14.509V186.113    c0-8.013,6.496-14.508,14.508-14.508c8.013,0,14.508,6.496,14.508,14.508V376.817z M320.679,376.817    c0,8.013-6.496,14.509-14.508,14.509c-8.013,0-14.509-6.496-14.509-14.509V186.113c0-8.013,6.496-14.508,14.509-14.508    s14.508,6.496,14.508,14.508V376.817z"/>
+31.                 </svg>
+32.               </button></svg></button>
+33.             </form>
+34.           </td>
+35.         </tr>
+36.       <?php endforeach; ?>
+37.       <tr>
+38.         <td colspan="4"><strong>Total:</strong></td>
+39.         <td><?= $total_sum ?></td>
+40.         <td></td>
+41.       </tr>
+42.     </tbody>
+43.   </table>
+44.   <div class="button-container">
+45.     <form method="post" action="/cart/clear">
+46.       <button class="cancel-button" type="submit">Cancel</button>
+47.     </form>
+48.     <form method="post" action="/cart/create">
+49.       <button class="pay-button" type="submit">Pay</button>
+50.     </form>
+51.   </div>
+52. <?php endif; ?>
+53. <?php require './footer.php';?>
+     Б.8 Довідкова сторінка
+ 1. <?php require './header.php';?>
+ 2. <h1>Хто сє вродив бо?</h1>
+ 3. <p>А то єсь студьонт ПЗПІ-23-1 званий Єгором на прізвисько Левченко</p>
+ 4. <pre style="font-size: 0.75em; line-height: 0.70rem;">
+ 5. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ 6. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣴⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ 7. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⡟⠛⠛⠛⠛⡟⠛⣿⣿⣿⠛⣿⣿⠛⠛⠛⠛⠛⣿⣿⠛⠛⠛⠛⢿⡟⠛⣿⣿⣿⣿⣿⡿⠛⣻⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ 8. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⠀⢰⣶⣶⣶⡇⠀⣿⣿⣿⠀⢸⣿⠀⣿⣿⣿⣷⠀⣿⠀⣿⣿⣿⣷⠀⣿⣄⠘⣿⣿⣿⠏⢀⣼⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ 9. ⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⡏⠀⠉⠉⠉⣿⡇⠀⣿⣿⣿⠀⢸⣿⠀⠿⠿⠿⠋⣼⣿⠀⠿⠿⠿⠏⢰⣿⣿⣀⠘⠿⠁⣰⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+10. ⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⠀⢰⣿⣿⣿⣿⡇⠀⣿⣿⣿⠀⢸⣿⠀⢠⣤⠀⢻⣿⣿⠀⢠⣤⡀⠸⣿⣿⣿⣿⠃⠀⣰⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+11. ⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⡇⠀⣿⣿⣿⣿⣿⣧⣀⠈⠉⠀⣀⣿⡇⠀⣿⣿⣄⠈⢿⡇⠀⣿⣿⣷⡀⠻⣿⡟⠀⣠⣾⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+12. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+13. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+14. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠙⠛⠛⠿⠿⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠛⠛⠿⠿⠛⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+15. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+16. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+17. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+18. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+19. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+20. ⠀⠀⠀⠀⠀⠀⠀⣐⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣶⣄⠀⠀⠀⠀⠀⠀⠀⢻⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣠⠄
+21. ⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⡿⠿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⡀⠴⣾⣿⣿⣿⣦⣿⣿⣿⣿⣷⣦⣄⠀⠀⠀⠀⠀⠀⣀⣤⣾⣿⣿⣿⣿⠀⠀
+22. ⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣯⣠⣴⣶⣦⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⡙⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣀⠀⠀⣤⣾⣿⣿⣿⣿⣿⣿⣿⠀⠀
+23. ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⡿⠟⠻⠿⠿⠿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣾⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀
+24. ⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⠀⠶⣶⣶⡆⠀⠀⠀⣸⡇⣤⣤⣤⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⠀
+25. ⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣷⣦⣤⣀⣀⣤⣴⣾⣿⣄⡉⠛⠃⠀⣰⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⠀⠀
+26. ⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣿⣿⠁⣤⣤⣄⡉⠙⠛⠃⣸⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢹⣿⢸⣿⣿⡏⠀⠀⠀⠀
+27. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣷⣤⣤⣤⣤⡴⠆⢹⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⡿⠿⠟⠻⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣌⣃⣼⣿⡟⠀⠀⠀⠀
+28. ⠀⠀⠀⠀⠀⠀⠀⠀⣀⣸⣿⣿⣿⣿⣦⣤⣤⣤⣿⣿⡿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣤⣴⣿⣿⣍⣠⣶⣶⣶⣦⡈⢻⣿⣿⣿⣿⣿⣿⡿⠟⠋⠉⠋⠉⠛⢿⣿⣿⣿⣿⣿⠅⠀⠀⠀⠀⠀
+29. ⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠛⠛⣿⣿⣿⣿⣿⣿⣿⣿⣿⠾⠿⣿⣿⣿⣿⣿⣤⣴⣶⣿⣿⣷⣶⣀⢹⣿⣿⣤⣶⣶⡶⠂⠀⠀⠀
+30. ⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣯⣛⣉⢩⡟⠟⢿⣿⣿⣦⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁⠀⠀⠀⠀⠀
+31. ⠀⠀⠀⣶⣿⣿⣿⡿⠛⠉⠙⠻⢿⣿⣿⣿⣿⠛⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠿⠿⠟⠳⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢿⣿⣿⣿⣍⣀⡤⠀⠝⢉⣹⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀
+32. ⠀⠀⢰⣿⣿⣿⡟⢀⣴⣿⣿⣦⠈⠙⠋⠉⠀⢠⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⠿⣿⣿⣦⣉⣡⣬⣙⣁⣼⣿⣿⣿⣿⣿⣿⣷⠾⠟⠻⢿⡿⣧⠀⠀⠀⠀⠀⠀⠀
+33. ⠀⠀⣾⣿⣿⣿⡇⠈⢰⠛⡿⠋⢀⣴⣾⣿⠀⣾⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢉⣹⣿⣿⣿⣿⣿⣿⣿⣉⣉⣭⣍⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+34. ⠀⢰⣿⣿⣿⠛⠷⣦⠈⠀⠁⣴⣿⣿⡿⠟⢠⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⠿⣷⣾⣿⣿⣿⣿⣿⣿⡿⠟⣓⣈⣅⣙⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+35. ⠀⣼⣿⣿⣿⣷⣄⠈⠻⢿⣿⡿⠟⠋⠠⣴⣾⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⡟⢋⣤⣴⣿⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+36. ⢰⣿⣿⣿⣿⣿⣿⣿⣦⣤⣤⣤⣴⣶⣦⣀⠉⠻⠟⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠾⠿⢿⣿⣿⣿⠏⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+37. ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣦⠹⡇⣾⣿⣧⢹⣿⡿⠛⢻⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+38. ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⣿⣿⣶⣤⣀⣉⣁⠈⠠⣤⣶⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀
+39. ⢸⣿⣿⣿⣿⣿⣿⣿⣿⠟⠛⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+40. ⢸⣿⣿⣿⣿⣿⣿⣿⠃⠀⠀⢸⣿⣿⣿⣿⡿⠿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣧⢹⣿⣿⣿⣆⢻⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀
+41. ⢸⣿⣿⣿⣿⠿⠿⠿⠀⠀⠀⠸⣿⣿⣿⣿⣴⣾⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⡈⢿⣿⣿⣿⣦⣙⠛⠛⢋⣁⣴⣿⠀⠀⠀⠀⠀⠀⠀⠀
+42. ⢸⣿⣿⣿⣷⣶⣶⣶⣶⣤⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⢀⣿⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣆⠀⠀⠀⠀⣀⣴⣾⣿
+43. ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠙⠿⣿⣿⣿⣿⣿⣿⡿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⢰⣿⣿⣿⣿⣿⣿⣿⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⢡⣠⣤⣶⣿⣿⣿⣿
+44. ⠀⠈⠛⠻⠿⠿⠿⠿⠟⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⡄⢽⣿⣿⣿⣿⣿⣿⢌⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⣿⣿⣿⣿⣿
+45. </pre>
+46. <?php require './footer.php';?>
+     Б.9 Скрипт для ініціалізації бази даних
+ 1. -- Since products have a price, we will need to create a table for the currency.
+ 2. CREATE TABLE IF NOT EXISTS [Currencies] (
+ 3.   -- ISO 4217 currency code is standardized, so it is a acceptable.
+ 4.   [currency_code] TEXT PRIMARY KEY,
+ 5.   [currency_name] TEXT NOT NULL,
+ 6.   [currency_symbol] TEXT NOT NULL
+ 7. );
+ 8. -- Currencies are static, so we can create a table with the default currencies.
+ 9. INSERT INTO [Currencies] ([currency_code], [currency_name], [currency_symbol])
+10. VALUES
+11.   ('UAH', 'Ukrainian Hryvnia',      '₴'),
+12.   ('USD', 'United States Dollar',   '$'),
+13.   ('EUR', 'Euro',                   '€'),
+14.   ('GBP', 'British Pound Sterling', '£'),
+15.   ('JPY', 'Japanese Yen',           '¥'),
+16.   ('AUD', 'Australian Dollar',      'A$'),
+17.   ('CAD', 'Canadian Dollar',        'C$'),
+18.   ('CHF', 'Swiss Franc',            'CHF'),
+19.   ('CNY', 'Chinese Yuan Renminbi',  '¥'),
+20.   ('SEK', 'Swedish Krona',          'kr'),
+21.   ('NZD', 'New Zealand Dollar',     'NZ$');
+22. -- Since products have an image, we will need to create a table for the images.
+23. CREATE TABLE IF NOT EXISTS [Images] (
+24.   -- Both path and name could be changed, so the id is better here.
+25.   [image_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+26.   [image_url] TEXT NOT NULL,
+27.   [image_name] TEXT NOT NULL,
+28.   UNIQUE([image_url])
+29. );
+30. -- In the current system, images are static, so we have to create a table with the default images.
+31. -- Image paths will point at the localserver with the port 8080, since we don't have a
+32. -- specific server to store images.
+33. INSERT INTO [Images] ([image_id], [image_url], [image_name])
+34. VALUES
+35.   (1, 'http://localhost:8080/assets/images/milk.png',    'milk.png'),
+36.   (2, 'http://localhost:8080/assets/images/black.jpg',   'black.jpg'),
+37.   (3, 'http://localhost:8080/assets/images/cheese.png',  'cheese.png'),
+38.   (4, 'http://localhost:8080/assets/images/white.png',   'white.png'),
+39.   (5, 'http://localhost:8080/assets/images/kefir.png',   'kefir.png'),
+40.   (6, 'http://localhost:8080/assets/images/water.png',   'water.png'),
+41.   (7, 'http://localhost:8080/assets/images/cookies.jpg', 'cookies.jpg');
+42. CREATE TABLE IF NOT EXISTS [Products] (
+43.   [product_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+44.   [product_name] TEXT NOT NULL,
+45.   [product_price] REAL NOT NULL CHECK([product_price] >= 0),
+46.   [currency_code] TEXT NOT NULL,
+47.   [image_id] INTEGER,
+48.   -- Products depends on currencies, since without currency we can't have a price.
+49.   FOREIGN KEY ([currency_code]) REFERENCES Currencies([currency_code]) ON DELETE Cascade,
+50.   FOREIGN KEY ([image_id]) REFERENCES Images([image_id]) ON DELETE SET NULL
+51. );
+52. -- In the current system, products are static, thus it is required to fill the table.
+53. INSERT INTO [Products] ([product_id], [product_name], [product_price], [currency_code], [image_id])
+54. VALUES
+55.   (1, 'Молоко пастеризоване', 12, 'UAH', 1),
+56.   (2, 'Хліб чорний',          9,  'UAH', 2),
+57.   (3, 'Сир білий',            21, 'UAH', 3),
+58.   (4, 'Сметана 20%',          25, 'UAH', 4),
+59.   (5, 'Кефір 1%',             19, 'UAH', 5),
+60.   (6, 'Вода газована',        18, 'UAH', 6),
+61.   (7, 'Печиво "Весна"',       14, 'UAH', 7);
+62. -- Registered user identities
+63. CREATE TABLE IF NOT EXISTS [UserIdentities] (
+64.   [user_identity_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+65.   [user_identity_email] TEXT NOT NULL UNIQUE,
+66.   [user_identity_password] TEXT NOT NULL
+67. );
+68. -- Registered user profiles
+69. CREATE TABLE IF NOT EXISTS [CustomerProfiles] (
+70.   [customer_profile_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+71.   [customer_first_name] TEXT,
+72.   [customer_last_name] TEXT,
+73.   [customer_age] INTEGER CHECK([customer_age] >= 0)
+74. );
+75. -- Orders for both registered and unregistered users
+76. CREATE TABLE IF NOT EXISTS [Orders] (
+77.   [order_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+78.   [customer_id] INTEGER,
+79.   [guest_id] TEXT,
+80.   FOREIGN KEY ([customer_id]) REFERENCES UserIdentities([user_identity_id]) ON DELETE SET NULL
+81. );
+82. CREATE TABLE IF NOT EXISTS [OrderItems] (
+83.   [order_item_id] INTEGER PRIMARY KEY AUTOINCREMENT,
+84.   [product_id] INTEGER NOT NULL,
+85.   [order_id] INTEGER NOT NULL,
+86.   [order_item_quantity] INTEGER NOT NULL DEFAULT 1 CHECK([order_item_quantity] > 0),
+87.   UNIQUE([product_id], [order_id]),
+88.   -- Item shouldn't exist without an order.
+89.   FOREIGN KEY ([product_id]) REFERENCES [Products]([product_id]) ON DELETE Cascade,
+90.   FOREIGN KEY ([order_id]) REFERENCES [Orders]([order_id]) ON DELETE Cascade
+91. );
+     Б.10 Скрипт для де-ініціалізації бази даних
+1. DROP TABLE IF EXISTS [OrderItems];
+2. DROP TABLE IF EXISTS [Orders];
+3. DROP TABLE IF EXISTS [CustomerProfiles];
+4. DROP TABLE IF EXISTS [UserIdentities];
+5. DROP TABLE IF EXISTS [Products];
+6. DROP TABLE IF EXISTS [Images];
+7. DROP TABLE IF EXISTS [Currencies];
+     Б.11 Скрипт для чистого створення бази даних
+ 1. #!/bin/bash
+ 2. # This script sets up the SQLite database for the application.
+ 3. # It removes any existing database file, creates a new one,
+ 4. # and executes the SQL script to create the database schema.
+ 5. # Usage: ./up.sh in the src/database directory
+ 6. DB_FILE="data.sqlite"
+ 7. CREATE_SCRIPT="create.sql"
+ 8. if [ -f "$DB_FILE" ]; then
+ 9.   echo "Removing existing database file: $DB_FILE"
+10.   rm "$DB_FILE"
+11. fi
+12. echo "Creating new database file: $DB_FILE"
+13. touch "$DB_FILE"
+14. if [ ! -f "$DB_FILE" ]; then
+15.   echo "Failed to create database file: $DB_FILE"
+16.   exit 1
+17. fi
+18. if [ ! -f "$CREATE_SCRIPT" ]; then
+19.   echo "SQL script not found: $CREATE_SCRIPT"
+20.   exit 1
+21. fi
+22. echo "Executing SQL script: $CREATE_SCRIPT"
+23. sqlite3 "$DB_FILE" < "$CREATE_SCRIPT"
+24. echo "Database schema created."
+25. echo "Database setup complete."
+     2
+     
+     
