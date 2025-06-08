@@ -65,7 +65,7 @@
 1. #!/bin/bash
 2. # This script is used to run the PHP built-in server for the application.
 3. php -S localhost:8080 index.php
-     4 ВИСНОВОКИ
+     5 ВИСНОВОКИ
      В результаті виконання лабораторної роботи було створено web-магазин із використанням скриптової мови програмування PHP, отримано базові навички з розробки web-сайтів та роботи з SQLite.
 
 
