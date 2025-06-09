@@ -7,7 +7,7 @@ function err() {
 
 function out() {
   if $quiet; then return; fi
-  echo $*
+  echo "$*"
 }
 
 function showHelp() {
@@ -66,11 +66,11 @@ function process_args() {
   done
   
   # Init student group, if given, and csv_file
-  if [[ $# > 1 ]]; then
+  if [ $# -gt 1 ]; then
     group="$1"
     shift
   fi
-  echo 'Arg $1:' $1
+  echo "Arg $1: $1"
   csv_file="$1"
   shift
 }
@@ -89,7 +89,7 @@ function select_file() {
         exit 1
         ;;
       *)
-        echo $file
+        echo "$file"
         return 0
         ;;
     esac
@@ -119,7 +119,7 @@ function check_file() {
 # Returns: Raw CSV data with fixed line endings in UTF-8.
 function get_raw_data() {
   local file="$1"
-  cat "$file" | sed 's/\r/\r\n/g' | iconv -f cp1251 -t utf8
+  sed 's/\r/\r\n/g' < "$file" | iconv -f cp1251 -t utf8
 }
 
 # Get a set of groups from the CSV
@@ -127,18 +127,18 @@ function get_raw_data() {
 # Returns: List of groups separated by new line;
 #          Empty string, if file was created for a single group.
 function get_groups() {
-  gawk -vFPAT='[^,]*|"[^"]*"' 'NR!=1 && /"([^"]+) - / {
-  gsub(/"/, "", $1)
-  split($1, g, " - ")
-  printf("%s\n", g[1])
-}' | sort | uniq
+    gawk -vFPAT='[^,]*|"[^"]*"' 'NR!=1 && /"([^"]+) - / {
+    gsub(/"/, "", $1)
+    split($1, g, " - ")
+    printf("%s\n", g[1])
+  }' | sort | uniq
 }
 
 # Promts user to select a group.
 # Return: Group identifier
 #         Or exit code 1
 function select_group() {
-  groups=$@
+  groups="$*"
   select group in $groups 'Завершити роботу'; do
     case $group in
       '')
@@ -147,7 +147,7 @@ function select_group() {
         exit 1
         ;;
       *)
-        echo $group
+        echo "$group"
         break
         ;;
     esac
@@ -172,7 +172,7 @@ csv_file=''
 # If there are groups, checks if current group is in list and asks user to select one,
 # if the group is not in the list.
 
-if (($# > 0)); then process_args $*; fi
+if (($# > 0)); then process_args "$@"; fi
 if [ -z "$csv_file" ]; then csv_file="$(select_file)"; fi
 if [[ $? == 1 ]]; then exit 0; fi
 
@@ -190,47 +190,111 @@ case $? in
     ;;
 esac
 
-raw_data="$(get_raw_data $csv_file)"
-groups="$(get_groups <<< $raw_data)"
+raw_data="$(get_raw_data "$csv_file")"
+groups="$(get_groups <<< "$raw_data")"
 
 if [ -n "$groups" ]; then
-  if [ -n "$group" ] && [[ $groups != *" $group "* ]]; then 
-    echo "Група $group відсутня у файлі."
+  if [ -n "$group" ] && ! echo "$groups" | grep -Fxq "$group"; then 
+    out "Група $group відсутня у файлі."
+    group=''
   fi
-
-  group=''
-  echo 'Оберіть групу:'
-  group=$(select_group $groups)
+  if [ -z "$group" ]; then
+    out 'Оберіть групу для формування розкладу:'
+    group=$(select_group "$groups")
+  fi
   if [[ $? == 1 ]]; then exit 0; fi
+else
+  group=''
 fi
 
 # Processing ===============================================
 
-# cat $csv_file | sed 's/\r/\r\n/g' | iconv -f cp1251 -t utf8 | gawk -vFPAT='[^,]*|"[^"]*"' '
-#   function format_date(date) {
-#   gsub(/"/, "", date)
-#   split(date, d, ".")
-#   return sprintf("\"%02d/%02d/%04d\"", d[2], d[1], d[3])
-# }
-# 
-# function format_time(time) {
-#   gsub(/"/, "", time)
-#   split(time, t, ":") # hh:mm:ss # $1 $2 $3
-#   if (t[1] == "00" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d AM\"", t[1], t[2])
-#   if (t[1] == "12" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d KekPM\"", t[1], t[2])
-#   if (t[1] >= 12) return sprintf("\"%02d:%02d PM\"", t[1] - 12, t[2])
-#   return sprintf("\"%02d:%02d AM\"", t[1], t[2])
-# }
-# 
-# BEGIN { print "\"Subject\",\"Start Date\",\"Start Time\",\"End Date\",\"End Time\",\"Description\"" }
-# 
-# NR!=1 {
-#   $2 = format_date($2)
-#   $3 = format_time($3)
-#   $4 = format_date($4)
-#   $5 = format_time($5)
-#   print $2, $3, $4, $5, $1, $12
-# }
-# ' OFS=',' | sort > output2.txt
+if [ -z "$group" ]; then
+  out "Обробка файлу $csv_file як призначеного для однієї групи..."
+else
+  out "Обробка файлу $csv_file як призначеного для групи $group..."
+fi
 
-echo "Кінець"
+# echo "Pattern: ^\"$group - "
+# gawk -vFPAT='[^,]*|"[^"]*"' '
+#     NR != 1 {
+#         print "Checking:"
+#     }' <<< "$raw_data" > output.txt
+
+if [ -n "$group" ]; then
+  ordered_data=$(gawk -vFPAT='[^,]*|"[^"]*"' -v group="$group" '
+      function format_date(date) {
+      gsub(/"/, "", date)
+      split(date, d, ".")
+      return sprintf("\"%02d/%02d/%04d\"", d[2], d[1], d[3])
+    }
+    function format_time(time) {
+      gsub(/"/, "", time)
+      split(time, t, ":") # hh:mm:ss # $1 $2 $3
+      if (t[1] == "00" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+      if (t[1] == "12" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d KekPM\"", t[1], t[2])
+      if (t[1] >= 12) return sprintf("\"%02d:%02d PM\"", t[1] - 12, t[2])
+      return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+    }
+    function trim_start(str, prefix) {
+      gsub("^" prefix, "", str)
+      return sprintf("\"%s", str)
+    }
+    NR!=1 && $0 ~ ("^\"" group " - ") {
+      $2 = format_date($2)
+      $3 = format_time($3)
+      $4 = format_date($4)
+      $5 = format_time($5)
+      $1 = trim_start($1, "\"" group " - ")
+      print $2, $3, $4, $5, $1, $12
+    }' OFS=',' <<< "$raw_data" | sort)
+else
+  ordered_data=$(gawk -vFPAT='[^,]*|"[^"]*"' -v group="$group" '
+      function format_date(date) {
+      gsub(/"/, "", date)
+      split(date, d, ".")
+      return sprintf("\"%02d/%02d/%04d\"", d[2], d[1], d[3])
+    }
+    function format_time(time) {
+      gsub(/"/, "", time)
+      split(time, t, ":") # hh:mm:ss # $1 $2 $3
+      if (t[1] == "00" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+      if (t[1] == "12" && t[2] == "00" && t[3] == "00") return sprintf("\"%02d:%02d KekPM\"", t[1], t[2])
+      if (t[1] >= 12) return sprintf("\"%02d:%02d PM\"", t[1] - 12, t[2])
+      return sprintf("\"%02d:%02d AM\"", t[1], t[2])
+    }
+    NR!=1 {
+      $2 = format_date($2)
+      $3 = format_time($3)
+      $4 = format_date($4)
+      $5 = format_time($5)
+      print $2, $3, $4, $5, $1, $12
+    }' OFS=',' <<< "$raw_data" | sort)
+fi
+
+formatted_data=$(gawk -vFPAT='[^,]*|"[^"]*"' '
+  NR != 1 {
+    gsub(/"/, "", $5)
+
+    counter[$5]++
+    count = counter[$5]
+    if ($5 ~ /Лб/) {
+      count = int((count + 1) / 2)
+    }
+    $5 = "\"" $5 "; №" count "\""
+    print $5, $1, $2, $3, $4, $6
+  }
+' OFS=',' <<< "$ordered_data" | sort)
+
+header='"Subject","Start Date","Start Time","End Date","End Time","Description"'
+if "$quiet"; then
+  {
+    echo "$header"
+    echo "$formatted_data"
+  } > "Google_${csv_file%.csv}.csv"
+else
+  {
+    echo "$header"
+    echo "$formatted_data"
+  } | tee "Google_${csv_file%.csv}.csv"
+fi
